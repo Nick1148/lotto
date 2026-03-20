@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>로또 번호 예상기 🍀</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- 헤더 -->
+    <header class="app-header">
+      <div class="header-content">
+        <h1 class="app-title">🍀 로또 번호 예상기</h1>
+        <div class="latest-info" id="latestInfo">
+          <span class="latest-label">최근 회차</span>
+          <span class="latest-round" id="latestRound">로딩 중...</span>
+        </div>
+      </div>
+      <div class="latest-numbers" id="latestNumbers">
+        <span class="loading-text">데이터 로딩 중...</span>
+      </div>
+    </header>
+
+    <!-- 탭 네비게이션 -->
+    <nav class="tab-nav">
+      <button class="tab-btn active" data-tab="random">
+        <span class="tab-icon">🎲</span>
+        <span class="tab-label">완전 랜덤</span>
+      </button>
+      <button class="tab-btn" data-tab="frequent">
+        <span class="tab-icon">🔥</span>
+        <span class="tab-label">자주 나온</span>
+      </button>
+      <button class="tab-btn" data-tab="rare">
+        <span class="tab-icon">❄️</span>
+        <span class="tab-label">안 나온</span>
+      </button>
+      <button class="tab-btn" data-tab="saju">
+        <span class="tab-icon">✨</span>
+        <span class="tab-label">내 사주</span>
+      </button>
+    </nav>
+
+    <!-- 탭 콘텐츠 -->
+    <main class="tab-content">
+      <!-- 완전 랜덤 탭 -->
+      <div class="tab-panel active" id="tab-random">
+        <div class="panel-description">
+          <p>1~45 중 완전히 무작위로 6개를 선택합니다.</p>
+        </div>
+        <button class="generate-btn" id="btn-random">
+          <span class="btn-icon">🎲</span>
+          번호 생성하기
+        </button>
+        <div class="result-area" id="result-random">
+          <div class="balls-container" id="balls-random"></div>
+          <div class="freq-chart" id="freq-random"></div>
+        </div>
+      </div>
+
+      <!-- 자주 나온 번호 탭 -->
+      <div class="tab-panel" id="tab-frequent">
+        <div class="panel-description">
+          <p>최근 10년 당첨 이력에서 <strong>가장 자주 나온</strong> 상위 15개 번호 중 6개를 선택합니다.</p>
+        </div>
+        <button class="generate-btn" id="btn-frequent">
+          <span class="btn-icon">🔥</span>
+          번호 생성하기
+        </button>
+        <div class="result-area" id="result-frequent">
+          <div class="balls-container" id="balls-frequent"></div>
+          <div class="freq-chart" id="freq-frequent"></div>
+        </div>
+        <div class="top-numbers-info" id="top15-info">
+          <h3>🔥 출현 빈도 상위 15개</h3>
+          <div class="info-balls" id="top15-balls"></div>
+        </div>
+      </div>
+
+      <!-- 안 나온 번호 탭 -->
+      <div class="tab-panel" id="tab-rare">
+        <div class="panel-description">
+          <p>최근 10년 당첨 이력에서 <strong>가장 적게 나온</strong> 하위 15개 번호 중 6개를 선택합니다.</p>
+        </div>
+        <button class="generate-btn" id="btn-rare">
+          <span class="btn-icon">❄️</span>
+          번호 생성하기
+        </button>
+        <div class="result-area" id="result-rare">
+          <div class="balls-container" id="balls-rare"></div>
+          <div class="freq-chart" id="freq-rare"></div>
+        </div>
+        <div class="top-numbers-info" id="bottom15-info">
+          <h3>❄️ 출현 빈도 하위 15개</h3>
+          <div class="info-balls" id="bottom15-balls"></div>
+        </div>
+      </div>
+
+      <!-- 내 사주 탭 -->
+      <div class="tab-panel" id="tab-saju">
+        <div class="panel-description">
+          <p>생년월일을 기반으로 사주(四柱)를 계산하여 번호를 생성합니다.<br>
+          같은 생년월일이면 항상 같은 번호가 나옵니다.</p>
+        </div>
+
+        <div class="saju-form">
+          <div class="form-group">
+            <label for="birthDate">생년월일</label>
+            <input type="date" id="birthDate" min="1930-01-01" max="2010-12-31"
+              value="1990-01-01">
+          </div>
+          <div class="form-group">
+            <label for="birthHour">태어난 시간 <span class="optional">(선택)</span></label>
+            <select id="birthHour">
+              <option value="-1">모름 / 선택 안함</option>
+              <option value="0">자시 (子時, 23:00~01:00)</option>
+              <option value="1">축시 (丑時, 01:00~03:00)</option>
+              <option value="2">인시 (寅時, 03:00~05:00)</option>
+              <option value="3">묘시 (卯時, 05:00~07:00)</option>
+              <option value="4">진시 (辰時, 07:00~09:00)</option>
+              <option value="5">사시 (巳時, 09:00~11:00)</option>
+              <option value="6">오시 (午時, 11:00~13:00)</option>
+              <option value="7">미시 (未時, 13:00~15:00)</option>
+              <option value="8">신시 (申時, 15:00~17:00)</option>
+              <option value="9">유시 (酉時, 17:00~19:00)</option>
+              <option value="10">술시 (戌時, 19:00~21:00)</option>
+              <option value="11">해시 (亥時, 21:00~23:00)</option>
+            </select>
+          </div>
+          <div class="saju-result-display" id="sajuDisplay" style="display:none">
+            <div class="saju-pillars" id="sajuPillars"></div>
+          </div>
+        </div>
+
+        <button class="generate-btn saju-btn" id="btn-saju">
+          <span class="btn-icon">✨</span>
+          사주 번호 생성하기
+        </button>
+
+        <div class="result-area" id="result-saju">
+          <div class="balls-container" id="balls-saju"></div>
+          <div class="freq-chart" id="freq-saju"></div>
+        </div>
+
+        <div class="disclaimer">
+          ⚠️ 사주 기반 번호는 재미 목적이며, 당첨을 보장하지 않습니다.<br>
+          로또는 완전한 확률 게임입니다. 과도한 구매를 삼가세요.
+        </div>
+      </div>
+    </main>
+
+    <!-- 생성 기록 -->
+    <section class="history-section">
+      <h2 class="history-title">📋 생성 기록</h2>
+      <div class="history-list" id="historyList">
+        <p class="history-empty">아직 생성된 번호가 없습니다.</p>
+      </div>
+      <button class="clear-history-btn" id="clearHistory" style="display:none">기록 지우기</button>
+    </section>
+
+    <!-- 푸터 -->
+    <footer class="app-footer">
+      <p>본 앱은 재미 목적으로 만들어졌습니다. 당첨을 보장하지 않습니다.</p>
+      <p>데이터 출처: <a href="https://www.dhlottery.co.kr" target="_blank">동행복권</a></p>
+    </footer>
+  </div>
+
+  <!-- 스크립트 -->
+  <script src="js/data.js"></script>
+  <script src="js/saju.js"></script>
+  <script src="js/lotto.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
