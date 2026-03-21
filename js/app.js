@@ -1,17 +1,48 @@
 /**
- * app.js - UI 이벤트 핸들러 및 공 애니메이션 제어
+ * app.js - UI 이벤트 핸들러, 캐릭터 상태, confetti, localStorage
  */
 
 // 생성 기록 (최대 20개)
 let generationHistory = [];
+
+// 캐릭터 응원 메시지
+const CHEER_MESSAGES = [
+  '행운을 빌어요! 🍀',
+  '이번엔 대박이에요! ✨',
+  '좋은 느낌이에요~! 💕',
+  '오늘의 행운 번호! 🌟',
+  '두근두근~! 💗',
+  '대박 나세요! 🎉',
+  '느낌이 좋아요! 🌈',
+  '행운이 가득~! 🍀✨',
+  '이 번호 믿어봐요! 💫',
+  '오늘은 럭키데이! 🎊'
+];
+
+const IDLE_MESSAGES = [
+  '번호를 뽑아볼까요? 🎱',
+  '오늘의 운세는~? ✨',
+  '행운을 찾아봐요! 🍀',
+  '어떤 번호가 나올까? 💭'
+];
+
+// ─── localStorage 키 ──────────────────────────────────────
+const STORAGE_KEY = 'lotto_history';
 
 // ─── 초기화 ───────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
   await initData();
   initTabs();
   initButtons();
-  initHistory();
+  initMbtiSelector();
+  loadHistoryFromStorage();
+  renderHistory();
   updateSajuDisplay();
+  initHistoryToggle();
+
+  // 캐릭터 초기 상태
+  setCharacterState('idle');
+  setTimeout(() => showSpeechBubble(pickRandom(IDLE_MESSAGES)), 500);
 });
 
 /**
@@ -23,7 +54,6 @@ async function initData() {
   const status = DataManager.getStatus();
   const latest = DataManager.getLatest();
 
-  // 최근 회차 정보 업데이트
   const roundEl = document.getElementById('latestRound');
   const numbersEl = document.getElementById('latestNumbers');
 
@@ -31,8 +61,7 @@ async function initData() {
     roundEl.textContent = '데이터 없음';
     numbersEl.innerHTML = `
       <div class="data-status fallback">
-        ⚠️ 역사 데이터 없음 — 폴백 통계 사용 중.
-        <code>scripts/fetch_data.js</code> 실행 후 새로고침하세요.
+        ⚠️ 데이터 없음 — 폴백 통계 사용 중
       </div>`;
   } else {
     roundEl.textContent = `제 ${latest.drwNo}회 (${latest.drwNoDate})`;
@@ -43,22 +72,20 @@ async function initData() {
     if (latest.bonusNo) {
       const sep = document.createElement('span');
       sep.textContent = '+';
-      sep.style.cssText = 'color:#f0c040;font-weight:700;font-size:1.2rem;';
+      sep.style.cssText = 'color:var(--color-primary);font-weight:700;font-size:1rem;margin:0 2px;';
       numbersEl.appendChild(sep);
       const bonus = createBall(latest.bonusNo, true);
-      bonus.style.opacity = '0.7';
-      bonus.style.border = '2px dashed rgba(255,255,255,0.4)';
+      bonus.style.opacity = '0.65';
+      bonus.style.border = '2px dashed rgba(255,126,179,0.4)';
       numbersEl.appendChild(bonus);
     }
 
-    // 데이터 상태 배너
     const statusBanner = document.createElement('div');
     statusBanner.className = 'data-status loaded';
-    statusBanner.innerHTML = `✅ ${status.totalDraws}회차 데이터 로드 완료 (최근 ${status.recentDraws}회 분석)`;
-    document.getElementById('latestNumbers').after(statusBanner);
+    statusBanner.innerHTML = `✅ ${status.totalDraws}회차 데이터 로드 (최근 ${status.recentDraws}회 분석)`;
+    numbersEl.after(statusBanner);
   }
 
-  // 자주 나온 / 안 나온 탭 info 채우기
   renderTopBottomBalls();
 }
 
@@ -126,17 +153,52 @@ function initButtons() {
 
     displayResult('saju', result.numbers, '✨ 내 사주');
     showSajuInfo(result.saju);
+    showExplanation('saju', result);
   });
 
-  // 생년월일 변경 시 사주 미리보기
+  // 이름 버튼
+  document.getElementById('btn-name').addEventListener('click', () => {
+    const name = document.getElementById('userName').value.trim();
+    if (!name || name.length < 2) {
+      showToast('이름을 2자 이상 입력해주세요.');
+      return;
+    }
+
+    const result = LottoGenerator.generateName(name);
+    displayResult('name', result.numbers, '📛 이름');
+    showNameInfo(result.nameInfo);
+    showExplanation('name', result);
+  });
+
+  // MBTI 버튼
+  document.getElementById('btn-mbti').addEventListener('click', () => {
+    const mbtiType = getSelectedMbti();
+    const result = LottoGenerator.generateMbti(mbtiType);
+
+    displayResult('mbti', result.numbers, '🧠 MBTI');
+    showExplanation('mbti', result);
+  });
+
   document.getElementById('birthDate').addEventListener('change', updateSajuDisplay);
   document.getElementById('birthHour').addEventListener('change', updateSajuDisplay);
 
-  // 기록 지우기
   document.getElementById('clearHistory').addEventListener('click', () => {
     generationHistory = [];
+    saveHistoryToStorage();
     renderHistory();
     showToast('기록이 삭제되었습니다.');
+  });
+}
+
+// ─── 생성 기록 접기/펼치기 ────────────────────────────────
+function initHistoryToggle() {
+  const toggle = document.getElementById('historyToggle');
+  const body = document.getElementById('historyBody');
+  const icon = document.getElementById('historyToggleIcon');
+
+  toggle.addEventListener('click', () => {
+    body.classList.toggle('collapsed');
+    icon.classList.toggle('collapsed');
   });
 }
 
@@ -180,38 +242,86 @@ function showSajuInfo(saju) {
   display.style.display = 'block';
 }
 
+// ─── 캐릭터 상태 관리 ────────────────────────────────────
+function setCharacterState(state) {
+  const char = document.getElementById('character');
+  char.className = 'character char-' + state;
+}
+
+function showSpeechBubble(text) {
+  const bubble = document.getElementById('speechBubble');
+  const textEl = document.getElementById('speechText');
+  textEl.textContent = text;
+  bubble.classList.add('visible');
+
+  setTimeout(() => bubble.classList.remove('visible'), 3000);
+}
+
 // ─── 결과 표시 ────────────────────────────────────────────
-/**
- * 번호 결과 영역에 공 애니메이션과 함께 표시
- */
 function displayResult(tabId, numbers, methodName) {
   const ballsContainer = document.getElementById(`balls-${tabId}`);
   const freqContainer = document.getElementById(`freq-${tabId}`);
 
-  // 기존 내용 지우기
   ballsContainer.innerHTML = '';
   freqContainer.innerHTML = '';
+
+  // 캐릭터 excited
+  setCharacterState('excited');
+  showSpeechBubble(pickRandom(CHEER_MESSAGES));
+
+  // 햅틱 피드백
+  if (navigator.vibrate) navigator.vibrate(50);
 
   // 공 순서대로 애니메이션
   numbers.forEach((num, idx) => {
     setTimeout(() => {
       const ball = createBall(num);
-      ball.style.animationDelay = `${idx * 80}ms`;
+      ball.style.animationDelay = `${idx * 60}ms`;
       ballsContainer.appendChild(ball);
-    }, idx * 80);
+    }, idx * 100);
   });
 
-  // 빈도 차트 표시 (마지막 공 후)
+  // 빈도 차트 + confetti + 기록 추가
   setTimeout(() => {
     renderFreqChart(freqContainer, numbers);
     addToHistory(numbers, methodName);
-  }, numbers.length * 80 + 200);
+    launchConfetti();
+
+    // 결과 영역으로 스크롤
+    const resultArea = document.getElementById(`result-${tabId}`);
+    resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    // 3초 후 idle
+    setTimeout(() => {
+      setCharacterState('idle');
+    }, 3000);
+  }, numbers.length * 100 + 300);
+}
+
+// ─── Confetti 효과 ────────────────────────────────────────
+function launchConfetti() {
+  const container = document.getElementById('confettiContainer');
+  const pieces = ['♡', '♦', '★', '✧', '🍀', '♡', '✦', '💕'];
+  const colors = ['#ff7eb3', '#7ec8c8', '#b4a7d6', '#ffd966', '#ff7272'];
+
+  for (let i = 0; i < 15; i++) {
+    const piece = document.createElement('span');
+    piece.className = 'confetti-piece';
+    piece.textContent = pieces[Math.floor(Math.random() * pieces.length)];
+    piece.style.left = Math.random() * 100 + '%';
+    piece.style.animationDelay = Math.random() * 0.5 + 's';
+    piece.style.animationDuration = (1.5 + Math.random()) + 's';
+    piece.style.color = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.fontSize = (0.8 + Math.random() * 0.8) + 'rem';
+    container.appendChild(piece);
+  }
+
+  setTimeout(() => {
+    container.innerHTML = '';
+  }, 2500);
 }
 
 // ─── 로또 공 생성 ─────────────────────────────────────────
-/**
- * 번호에 맞는 색상의 공 엘리먼트 생성
- */
 function createBall(number, small = false) {
   const ball = document.createElement('div');
   ball.className = `ball ${getBallColorClass(number)} ${small ? 'ball-sm' : ''}`;
@@ -220,9 +330,6 @@ function createBall(number, small = false) {
   return ball;
 }
 
-/**
- * 번호 범위에 따른 CSS 클래스 반환
- */
 function getBallColorClass(n) {
   if (n <= 10) return 'ball-1-10';
   if (n <= 20) return 'ball-11-20';
@@ -232,14 +339,10 @@ function getBallColorClass(n) {
 }
 
 // ─── 빈도 차트 ────────────────────────────────────────────
-/**
- * 선택된 번호들의 빈도 미니 바차트 렌더링
- */
 function renderFreqChart(container, numbers) {
   const maxCount = DataManager.getMaxCount();
   const ranked = DataManager.getFrequencyRanked();
 
-  // 번호의 랭킹 계산
   const rankMap = {};
   ranked.forEach((item, idx) => { rankMap[item.number] = idx + 1; });
 
@@ -265,7 +368,6 @@ function renderFreqChart(container, numbers) {
     `;
     container.appendChild(item);
 
-    // 바 애니메이션
     requestAnimationFrame(() => {
       setTimeout(() => {
         item.querySelector('.freq-bar').style.width = `${pct}%`;
@@ -274,31 +376,45 @@ function renderFreqChart(container, numbers) {
   });
 }
 
-/**
- * 공 색상 클래스 → 바 색상 CSS 값
- */
 function getBarColor(ballClass) {
   const colors = {
-    'ball-1-10': 'rgba(251, 196, 0, 0.7)',
-    'ball-11-20': 'rgba(105, 200, 242, 0.7)',
-    'ball-21-30': 'rgba(255, 114, 114, 0.7)',
-    'ball-31-40': 'rgba(170, 170, 170, 0.7)',
-    'ball-41-45': 'rgba(176, 216, 64, 0.7)'
+    'ball-1-10': 'rgba(251, 196, 0, 0.6)',
+    'ball-11-20': 'rgba(105, 200, 242, 0.6)',
+    'ball-21-30': 'rgba(255, 114, 114, 0.6)',
+    'ball-31-40': 'rgba(170, 170, 170, 0.6)',
+    'ball-41-45': 'rgba(176, 216, 64, 0.6)'
   };
-  return colors[ballClass] || 'rgba(240, 192, 64, 0.7)';
+  return colors[ballClass] || 'rgba(255, 126, 179, 0.6)';
 }
 
-// ─── 생성 기록 ────────────────────────────────────────────
-function initHistory() {
-  renderHistory();
+// ─── 생성 기록 (localStorage) ─────────────────────────────
+function loadHistoryFromStorage() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      generationHistory = JSON.parse(saved);
+    }
+  } catch (e) {
+    generationHistory = [];
+  }
+}
+
+function saveHistoryToStorage() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(generationHistory));
+  } catch (e) {
+    // localStorage 용량 초과 등 무시
+  }
 }
 
 function addToHistory(numbers, methodName) {
   const now = new Date();
   const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+  const dateStr = `${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getDate().toString().padStart(2, '0')}`;
 
-  generationHistory.unshift({ numbers, methodName, time: timeStr });
+  generationHistory.unshift({ numbers, methodName, time: timeStr, date: dateStr });
   if (generationHistory.length > 20) generationHistory.pop();
+  saveHistoryToStorage();
   renderHistory();
 }
 
@@ -307,7 +423,12 @@ function renderHistory() {
   const clearBtn = document.getElementById('clearHistory');
 
   if (generationHistory.length === 0) {
-    list.innerHTML = '<p class="history-empty">아직 생성된 번호가 없습니다.</p>';
+    list.innerHTML = `
+      <div class="history-empty">
+        <div class="empty-icon">🎱</div>
+        <p>아직 생성된 번호가 없어요</p>
+        <p class="empty-sub">위에서 번호를 생성해보세요!</p>
+      </div>`;
     clearBtn.style.display = 'none';
     return;
   }
@@ -315,7 +436,7 @@ function renderHistory() {
   clearBtn.style.display = 'block';
   list.innerHTML = '';
 
-  generationHistory.forEach(({ numbers, methodName, time }) => {
+  generationHistory.forEach(({ numbers, methodName, time, date }) => {
     const item = document.createElement('div');
     item.className = 'history-item';
 
@@ -324,10 +445,12 @@ function renderHistory() {
       `<div class="ball ball-sm ${getBallColorClass(n)}">${n}</div>`
     ).join('');
 
+    const displayTime = date ? `${date} ${time}` : time;
+
     item.innerHTML = `
       <span class="history-method ${methodClass}">${methodName}</span>
       <div class="history-balls">${ballsHtml}</div>
-      <span class="history-time">${time}</span>
+      <span class="history-time">${displayTime}</span>
     `;
     list.appendChild(item);
   });
@@ -338,6 +461,8 @@ function getMethodClass(methodName) {
   if (methodName.includes('자주')) return 'method-frequent';
   if (methodName.includes('나온')) return 'method-rare';
   if (methodName.includes('사주')) return 'method-saju';
+  if (methodName.includes('이름')) return 'method-name';
+  if (methodName.includes('MBTI')) return 'method-mbti';
   return 'method-random';
 }
 
@@ -354,4 +479,81 @@ function showToast(message) {
   toast.classList.add('show');
 
   setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+// ─── MBTI 선택기 ────────────────────────────────────────
+function initMbtiSelector() {
+  const selector = document.getElementById('mbtiSelector');
+  if (!selector) return;
+
+  selector.addEventListener('click', (e) => {
+    const btn = e.target.closest('.mbti-opt');
+    if (!btn) return;
+
+    const axis = btn.dataset.axis;
+    // 같은 축의 다른 버튼 비활성화
+    selector.querySelectorAll(`.mbti-opt[data-axis="${axis}"]`).forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    updateMbtiDisplay();
+  });
+
+  updateMbtiDisplay();
+}
+
+function getSelectedMbti() {
+  const axes = [0, 1, 2, 3];
+  let mbti = '';
+  for (const axis of axes) {
+    const active = document.querySelector(`.mbti-opt[data-axis="${axis}"].active`);
+    mbti += active ? active.dataset.value : '';
+  }
+  return mbti;
+}
+
+function updateMbtiDisplay() {
+  const type = getSelectedMbti();
+  const typeEl = document.getElementById('mbtiTypeDisplay');
+  const labelEl = document.getElementById('mbtiLabelDisplay');
+
+  typeEl.textContent = type;
+  const profile = MbtiGenerator.PROFILES[type];
+  labelEl.textContent = profile ? profile.label : '';
+}
+
+// ─── 이름 분석 정보 표시 ─────────────────────────────────
+function showNameInfo(nameInfo) {
+  const infoEl = document.getElementById('nameInfo');
+  const decomposedEl = document.getElementById('nameDecomposed');
+  const summaryEl = document.getElementById('nameSummary');
+
+  decomposedEl.innerHTML = '';
+  for (const d of nameInfo.decomposed) {
+    const box = document.createElement('div');
+    box.className = 'name-char-box';
+    box.innerHTML = `
+      <span class="name-char-main">${d.char}</span>
+      <span class="name-char-jamo">${d.cho}${d.jung}${d.jong}</span>
+      <span class="name-char-strokes">${d.strokes}획</span>
+    `;
+    decomposedEl.appendChild(box);
+  }
+
+  summaryEl.innerHTML = `총 <strong>${nameInfo.strokes}획</strong> · 오행 <strong>${nameInfo.element.name}(${nameInfo.element.ko})</strong> · ${nameInfo.element.desc}`;
+  infoEl.style.display = 'block';
+}
+
+// ─── 설명 표시 ──────────────────────────────────────────
+function showExplanation(type, result) {
+  const box = document.getElementById(`explain-${type}`);
+  if (!box) return;
+
+  const text = ExplainEngine.generate(type, result);
+  box.querySelector('.explain-text').textContent = text;
+  box.style.display = 'flex';
+}
+
+// ─── 유틸 ─────────────────────────────────────────────────
+function pickRandom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
 }

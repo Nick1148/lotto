@@ -61,5 +61,23 @@ const LottoGenerator = (() => {
     return SajuCalculator.getSajuNumbers(year, month, day, hourIdx);
   }
 
-  return { generateRandom, generateFrequent, generateRare, generateSaju };
+  /**
+   * 5. 이름 기반 번호 생성
+   * @param {string} name
+   * @returns {{ numbers: number[], nameInfo: Object }}
+   */
+  function generateName(name) {
+    return NameGenerator.getNameNumbers(name);
+  }
+
+  /**
+   * 6. MBTI 기반 번호 생성
+   * @param {string} mbtiType
+   * @returns {{ numbers: number[], mbtiInfo: Object }}
+   */
+  function generateMbti(mbtiType) {
+    return MbtiGenerator.getMbtiNumbers(mbtiType);
+  }
+
+  return { generateRandom, generateFrequent, generateRare, generateSaju, generateName, generateMbti };
 })();
