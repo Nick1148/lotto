@@ -151,6 +151,46 @@ const DataManager = (() => {
     };
   }
 
+  /**
+   * 역대 합계 분포 반환 (합계 → 출현 횟수)
+   */
+  function getHistoricalSumDistribution() {
+    const dist = {};
+    const data = _history.length > 0 ? _history : [];
+    for (const draw of data) {
+      const sum = draw.numbers.reduce((a, b) => a + b, 0);
+      dist[sum] = (dist[sum] || 0) + 1;
+    }
+    return dist;
+  }
+
+  /**
+   * 역대 홀짝 비율 분포 반환 (홀수개수 → 출현 횟수)
+   */
+  function getHistoricalOddEvenDistribution() {
+    const dist = {};
+    const data = _history.length > 0 ? _history : [];
+    for (const draw of data) {
+      const oddCount = draw.numbers.filter(n => n % 2 === 1).length;
+      const key = `${oddCount}:${6 - oddCount}`;
+      dist[key] = (dist[key] || 0) + 1;
+    }
+    return dist;
+  }
+
+  /**
+   * 특정 번호의 미출현 회차 (최근 연속 미출현 수)
+   */
+  function getNumberGap(number) {
+    if (_history.length === 0) return 0;
+    let gap = 0;
+    for (let i = _history.length - 1; i >= 0; i--) {
+      if (_history[i].numbers.includes(number)) break;
+      gap++;
+    }
+    return gap;
+  }
+
   return {
     loadHistory,
     getFrequency,
@@ -160,6 +200,9 @@ const DataManager = (() => {
     getLatest,
     getCount,
     getMaxCount,
-    getStatus
+    getStatus,
+    getHistoricalSumDistribution,
+    getHistoricalOddEvenDistribution,
+    getNumberGap
   };
 })();

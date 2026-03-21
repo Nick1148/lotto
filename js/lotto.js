@@ -79,5 +79,23 @@ const LottoGenerator = (() => {
     return MbtiGenerator.getMbtiNumbers(mbtiType);
   }
 
-  return { generateRandom, generateFrequent, generateRare, generateSaju, generateName, generateMbti };
+  /**
+   * 스마트 필터 래퍼 — 생성 결과를 통계 조건에 맞을 때까지 재생성 (최대 100회)
+   * @param {Function} generatorFn - 번호 배열 또는 {numbers, ...} 반환 함수
+   * @param {Array} args - 생성 함수에 전달할 인자
+   * @param {boolean} filterOn - 필터 활성화 여부
+   * @returns 원래 생성 함수의 반환값
+   */
+  function smartFilter(generatorFn, args = [], filterOn = false) {
+    if (!filterOn) return generatorFn(...args);
+
+    for (let i = 0; i < 100; i++) {
+      const result = generatorFn(...args);
+      const numbers = Array.isArray(result) ? result : result.numbers;
+      if (NumberAnalyzer.passesFilter(numbers)) return result;
+    }
+    return generatorFn(...args);
+  }
+
+  return { generateRandom, generateFrequent, generateRare, generateSaju, generateName, generateMbti, smartFilter };
 })();

@@ -256,6 +256,46 @@ const ExplainEngine = (() => {
     return arr[Math.floor(Math.random() * arr.length)];
   }
 
+  // ─── 통계 인사이트 템플릿 ─────────────────────────────────
+  const STAT_INSIGHTS = {
+    sumGood: [
+      '이 조합의 합 {sum}은 역대 당첨 조합에서 가장 많이 나오는 구간이에요.',
+      '합계 {sum} — 통계적으로 가장 흔한 당첨 합계 범위 안에 있어요!',
+      '번호 합 {sum}은 당첨 확률이 높은 구간에 딱 들어맞아요.'
+    ],
+    oddEvenGood: [
+      '홀짝 비율이 통계적으로 가장 흔한 패턴이에요.',
+      '홀짝 균형이 역대 당첨 번호와 잘 맞는 비율이에요!',
+      '이 홀짝 비율은 역대 1등에서 가장 많이 나온 패턴이에요.'
+    ],
+    balanceGood: [
+      '고저 번호의 균형이 통계적으로 이상적이에요.',
+      '저번호와 고번호가 골고루 섞인 좋은 조합이에요!'
+    ]
+  };
+
+  /**
+   * 통계 인사이트 생성 (좋을 때만)
+   */
+  function buildStatInsight(numbers) {
+    const insights = [];
+    const sum = numbers.reduce((a, b) => a + b, 0);
+    const odd = numbers.filter(n => n % 2 === 1).length;
+    const low = numbers.filter(n => n <= 22).length;
+
+    if (sum >= 100 && sum <= 175) {
+      insights.push(fill(pick(STAT_INSIGHTS.sumGood), { sum }));
+    }
+    if (odd >= 2 && odd <= 4) {
+      insights.push(pick(STAT_INSIGHTS.oddEvenGood));
+    }
+    if (low >= 2 && low <= 4 && insights.length < 2) {
+      insights.push(pick(STAT_INSIGHTS.balanceGood));
+    }
+
+    return insights.length > 0 ? ' ' + insights.join(' ') : '';
+  }
+
   /**
    * 설명 생성 (공개 API)
    * @param {string} type - 'saju' | 'name' | 'mbti'
@@ -273,7 +313,9 @@ const ExplainEngine = (() => {
     const numbers = fill(pick(tmpl.numbers), ctx);
     const closing = fill(pick(tmpl.closing), ctx);
 
-    return `${opening} ${analysis} ${numbers} ${closing}`;
+    const statInsight = buildStatInsight(result.numbers);
+
+    return `${opening} ${analysis} ${numbers}${statInsight} ${closing}`;
   }
 
   return { generate, buildContext };

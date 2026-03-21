@@ -121,6 +121,13 @@
         <div class="panel-description">
           <p>1~45 중 완전히 무작위로 6개를 선택합니다.</p>
         </div>
+        <div class="smart-filter-row">
+          <label class="smart-filter-toggle">
+            <input type="checkbox" class="smart-filter-checkbox" data-tab="random">
+            <span class="smart-filter-slider"></span>
+          </label>
+          <span class="smart-filter-label">📊 통계 필터</span>
+        </div>
         <button class="generate-btn" id="btn-random">
           <span class="btn-icon">🎲</span>
           번호 생성하기
@@ -128,6 +135,7 @@
         </button>
         <div class="result-area" id="result-random">
           <div class="balls-container" id="balls-random"></div>
+          <div class="analysis-card" id="analysis-random"></div>
           <div class="freq-chart" id="freq-random"></div>
         </div>
       </div>
@@ -137,6 +145,13 @@
         <div class="panel-description">
           <p>최근 당첨 이력에서 <strong>가장 자주 나온</strong> 상위 15개 번호 중 6개를 선택합니다.</p>
         </div>
+        <div class="smart-filter-row">
+          <label class="smart-filter-toggle">
+            <input type="checkbox" class="smart-filter-checkbox" data-tab="frequent">
+            <span class="smart-filter-slider"></span>
+          </label>
+          <span class="smart-filter-label">📊 통계 필터</span>
+        </div>
         <button class="generate-btn" id="btn-frequent">
           <span class="btn-icon">🔥</span>
           번호 생성하기
@@ -144,6 +159,7 @@
         </button>
         <div class="result-area" id="result-frequent">
           <div class="balls-container" id="balls-frequent"></div>
+          <div class="analysis-card" id="analysis-frequent"></div>
           <div class="freq-chart" id="freq-frequent"></div>
         </div>
         <div class="top-numbers-info" id="top15-info">
@@ -157,6 +173,13 @@
         <div class="panel-description">
           <p>최근 당첨 이력에서 <strong>가장 적게 나온</strong> 하위 15개 번호 중 6개를 선택합니다.</p>
         </div>
+        <div class="smart-filter-row">
+          <label class="smart-filter-toggle">
+            <input type="checkbox" class="smart-filter-checkbox" data-tab="rare">
+            <span class="smart-filter-slider"></span>
+          </label>
+          <span class="smart-filter-label">📊 통계 필터</span>
+        </div>
         <button class="generate-btn" id="btn-rare">
           <span class="btn-icon">❄️</span>
           번호 생성하기
@@ -164,6 +187,7 @@
         </button>
         <div class="result-area" id="result-rare">
           <div class="balls-container" id="balls-rare"></div>
+          <div class="analysis-card" id="analysis-rare"></div>
           <div class="freq-chart" id="freq-rare"></div>
         </div>
         <div class="top-numbers-info" id="bottom15-info">
@@ -208,6 +232,14 @@
           </div>
         </div>
 
+        <div class="smart-filter-row">
+          <label class="smart-filter-toggle">
+            <input type="checkbox" class="smart-filter-checkbox" data-tab="saju">
+            <span class="smart-filter-slider"></span>
+          </label>
+          <span class="smart-filter-label">📊 통계 필터</span>
+        </div>
+
         <button class="generate-btn saju-btn" id="btn-saju">
           <span class="btn-icon">✨</span>
           사주 번호 생성하기
@@ -216,6 +248,7 @@
 
         <div class="result-area" id="result-saju">
           <div class="balls-container" id="balls-saju"></div>
+          <div class="analysis-card" id="analysis-saju"></div>
           <div class="explain-box" id="explain-saju" style="display:none">
             <div class="explain-icon">💬</div>
             <p class="explain-text"></p>
@@ -247,6 +280,14 @@
           </div>
         </div>
 
+        <div class="smart-filter-row">
+          <label class="smart-filter-toggle">
+            <input type="checkbox" class="smart-filter-checkbox" data-tab="name">
+            <span class="smart-filter-slider"></span>
+          </label>
+          <span class="smart-filter-label">📊 통계 필터</span>
+        </div>
+
         <button class="generate-btn name-btn" id="btn-name">
           <span class="btn-icon">📛</span>
           이름 번호 생성하기
@@ -255,6 +296,7 @@
 
         <div class="result-area" id="result-name">
           <div class="balls-container" id="balls-name"></div>
+          <div class="analysis-card" id="analysis-name"></div>
           <div class="explain-box" id="explain-name" style="display:none">
             <div class="explain-icon">💬</div>
             <p class="explain-text"></p>
@@ -304,6 +346,14 @@
           </div>
         </div>
 
+        <div class="smart-filter-row">
+          <label class="smart-filter-toggle">
+            <input type="checkbox" class="smart-filter-checkbox" data-tab="mbti">
+            <span class="smart-filter-slider"></span>
+          </label>
+          <span class="smart-filter-label">📊 통계 필터</span>
+        </div>
+
         <button class="generate-btn mbti-btn" id="btn-mbti">
           <span class="btn-icon">🧠</span>
           오늘의 MBTI 번호 생성하기
@@ -312,6 +362,7 @@
 
         <div class="result-area" id="result-mbti">
           <div class="balls-container" id="balls-mbti"></div>
+          <div class="analysis-card" id="analysis-mbti"></div>
           <div class="explain-box" id="explain-mbti" style="display:none">
             <div class="explain-icon">💬</div>
             <p class="explain-text"></p>
@@ -356,6 +407,7 @@
 
   <!-- 스크립트 -->
   <script src="js/data.js"></script>
+  <script src="js/analysis.js"></script>
   <script src="js/saju.js"></script>
   <script src="js/name.js"></script>
   <script src="js/mbti.js"></script>

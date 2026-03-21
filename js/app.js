@@ -125,18 +125,21 @@ function initTabs() {
 // ─── 버튼 초기화 ──────────────────────────────────────────
 function initButtons() {
   document.getElementById('btn-random').addEventListener('click', () => {
-    const numbers = LottoGenerator.generateRandom();
-    displayResult('random', numbers, '🎲 완전 랜덤');
+    const filterOn = isSmartFilterOn('random');
+    const numbers = LottoGenerator.smartFilter(LottoGenerator.generateRandom, [], filterOn);
+    displayResult('random', numbers, '🎲 완전 랜덤', filterOn);
   });
 
   document.getElementById('btn-frequent').addEventListener('click', () => {
-    const numbers = LottoGenerator.generateFrequent();
-    displayResult('frequent', numbers, '🔥 자주 나온');
+    const filterOn = isSmartFilterOn('frequent');
+    const numbers = LottoGenerator.smartFilter(LottoGenerator.generateFrequent, [], filterOn);
+    displayResult('frequent', numbers, '🔥 자주 나온', filterOn);
   });
 
   document.getElementById('btn-rare').addEventListener('click', () => {
-    const numbers = LottoGenerator.generateRare();
-    displayResult('rare', numbers, '❄️ 안 나온');
+    const filterOn = isSmartFilterOn('rare');
+    const numbers = LottoGenerator.smartFilter(LottoGenerator.generateRare, [], filterOn);
+    displayResult('rare', numbers, '❄️ 안 나온', filterOn);
   });
 
   document.getElementById('btn-saju').addEventListener('click', () => {
@@ -149,9 +152,10 @@ function initButtons() {
     }
 
     const [year, month, day] = dateVal.split('-').map(Number);
-    const result = LottoGenerator.generateSaju(year, month, day, hourIdx);
+    const filterOn = isSmartFilterOn('saju');
+    const result = LottoGenerator.smartFilter(LottoGenerator.generateSaju, [year, month, day, hourIdx], filterOn);
 
-    displayResult('saju', result.numbers, '✨ 내 사주');
+    displayResult('saju', result.numbers, '✨ 내 사주', filterOn);
     showSajuInfo(result.saju);
     showExplanation('saju', result);
   });
@@ -164,8 +168,9 @@ function initButtons() {
       return;
     }
 
-    const result = LottoGenerator.generateName(name);
-    displayResult('name', result.numbers, '📛 이름');
+    const filterOn = isSmartFilterOn('name');
+    const result = LottoGenerator.smartFilter(LottoGenerator.generateName, [name], filterOn);
+    displayResult('name', result.numbers, '📛 이름', filterOn);
     showNameInfo(result.nameInfo);
     showExplanation('name', result);
   });
@@ -173,9 +178,10 @@ function initButtons() {
   // MBTI 버튼
   document.getElementById('btn-mbti').addEventListener('click', () => {
     const mbtiType = getSelectedMbti();
-    const result = LottoGenerator.generateMbti(mbtiType);
+    const filterOn = isSmartFilterOn('mbti');
+    const result = LottoGenerator.smartFilter(LottoGenerator.generateMbti, [mbtiType], filterOn);
 
-    displayResult('mbti', result.numbers, '🧠 MBTI');
+    displayResult('mbti', result.numbers, '🧠 MBTI', filterOn);
     showExplanation('mbti', result);
   });
 
@@ -258,7 +264,7 @@ function showSpeechBubble(text) {
 }
 
 // ─── 결과 표시 ────────────────────────────────────────────
-function displayResult(tabId, numbers, methodName) {
+function displayResult(tabId, numbers, methodName, filtered = false) {
   const ballsContainer = document.getElementById(`balls-${tabId}`);
   const freqContainer = document.getElementById(`freq-${tabId}`);
 
@@ -281,9 +287,10 @@ function displayResult(tabId, numbers, methodName) {
     }, idx * 100);
   });
 
-  // 빈도 차트 + confetti + 기록 추가
+  // 빈도 차트 + 분석 카드 + confetti + 기록 추가
   setTimeout(() => {
     renderFreqChart(freqContainer, numbers);
+    renderAnalysisCard(tabId, numbers, filtered);
     addToHistory(numbers, methodName);
     launchConfetti();
 
@@ -551,6 +558,68 @@ function showExplanation(type, result) {
   const text = ExplainEngine.generate(type, result);
   box.querySelector('.explain-text').textContent = text;
   box.style.display = 'flex';
+}
+
+// ─── 분석 카드 렌더링 ─────────────────────────────────────
+function renderAnalysisCard(tabId, numbers, filtered = false) {
+  const container = document.getElementById(`analysis-${tabId}`);
+  if (!container) return;
+
+  const result = NumberAnalyzer.analyze(numbers);
+
+  const starCount = Math.round(result.score.total / 20);
+  const stars = '🍀'.repeat(starCount) + '☘️'.repeat(5 - starCount);
+
+  const checkIcon = (good) => good
+    ? '<span class="analysis-item-check good">✅</span>'
+    : '<span class="analysis-item-check neutral">💡</span>';
+
+  const filterBadge = filtered
+    ? '<div class="analysis-filter-badge">📊 통계 필터 적용됨</div>'
+    : '';
+
+  container.innerHTML = `
+    <div class="analysis-card-inner">
+      <div class="analysis-title">📊 번호 분석</div>
+      <div class="analysis-items">
+        <div class="analysis-item">
+          <span class="analysis-item-icon">➕</span>
+          <span class="analysis-item-text">${result.sum.label}</span>
+          ${checkIcon(result.sum.inRange)}
+        </div>
+        <div class="analysis-item">
+          <span class="analysis-item-icon">⚖️</span>
+          <span class="analysis-item-text">${result.oddEven.label}</span>
+          ${checkIcon(result.oddEven.balanced)}
+        </div>
+        <div class="analysis-item">
+          <span class="analysis-item-icon">📏</span>
+          <span class="analysis-item-text">${result.highLow.label}</span>
+          ${checkIcon(result.highLow.balanced)}
+        </div>
+        <div class="analysis-item">
+          <span class="analysis-item-icon">🔗</span>
+          <span class="analysis-item-text">${result.consecutive.label}</span>
+          ${checkIcon(result.consecutive.good)}
+        </div>
+      </div>
+      <div class="analysis-score">
+        <div class="analysis-score-left">
+          <span class="analysis-score-value">${result.score.total}점</span>
+          <span class="analysis-score-label">패턴 점수</span>
+        </div>
+        <div class="analysis-score-stars">${stars}</div>
+      </div>
+      <div class="analysis-comment">"${result.score.comment} ${result.score.emoji}"</div>
+      ${filterBadge}
+    </div>
+  `;
+}
+
+// ─── 스마트 필터 상태 확인 ─────────────────────────────────
+function isSmartFilterOn(tabId) {
+  const checkbox = document.querySelector(`.smart-filter-checkbox[data-tab="${tabId}"]`);
+  return checkbox ? checkbox.checked : false;
 }
 
 // ─── 유틸 ─────────────────────────────────────────────────
