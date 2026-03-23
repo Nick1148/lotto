@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://nick1148.site/sitemap.xml

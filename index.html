@@ -6,11 +6,38 @@
   <meta name="theme-color" content="#fff5f9">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <title>로또 번호 예상기 🍀</title>
+  <title>로또 번호 예상기 🍀 | 사주·이름·MBTI로 행운번호 추천</title>
+  <meta name="description" content="사주, 이름, MBTI, 통계 기반으로 나만의 로또 번호를 무료로 생성해보세요. 6가지 알고리즘으로 행운의 번호를 추천합니다.">
+  <meta name="keywords" content="로또번호, 로또번호추천, 로또예상, 사주로또, 이름로또, MBTI로또, 행운번호, 로또번호생성기">
+
+  <!-- Open Graph (카카오톡, 페이스북 공유용) -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="🍀 로또 번호 예상기 - 나만의 행운번호">
+  <meta property="og:description" content="사주·이름·MBTI·통계 기반 6가지 알고리즘! 무료로 나만의 로또 번호를 뽑아보세요.">
+  <meta property="og:url" content="https://nick1148.site">
+  <meta property="og:image" content="https://nick1148.site/og-image.svg">
+  <meta property="og:locale" content="ko_KR">
+  <meta property="og:site_name" content="로또 번호 예상기">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="🍀 로또 번호 예상기 - 나만의 행운번호">
+  <meta name="twitter:description" content="사주·이름·MBTI·통계 기반 6가지 알고리즘! 무료로 나만의 로또 번호를 뽑아보세요.">
+  <meta name="twitter:image" content="https://nick1148.site/og-image.svg">
+
+  <!-- 네이버 서치어드바이저 소유확인 -->
+  <meta name="naver-site-verification" content="46981d43eb8b4553752ed52a7bea112849591cee" />
+
+  <!-- 검색엔진 -->
+  <link rel="canonical" href="https://nick1148.site">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+
+  <!-- Vercel Analytics -->
+  <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
   <!-- 배경 장식 -->
@@ -86,6 +113,37 @@
       </div>
     </header>
 
+    <!-- 오늘의 운세 번호 -->
+    <section class="daily-fortune" id="dailyFortune">
+      <div class="fortune-card">
+        <div class="fortune-header">
+          <span class="fortune-date" id="fortuneDate"></span>
+          <span class="fortune-badge">TODAY</span>
+        </div>
+        <h2 class="fortune-title">오늘의 행운 번호</h2>
+        <div class="fortune-balls" id="fortuneBalls"></div>
+        <div class="fortune-meta">
+          <div class="fortune-item">
+            <span class="fortune-item-label">행운 점수</span>
+            <span class="fortune-item-value" id="fortuneScore"></span>
+          </div>
+          <div class="fortune-item">
+            <span class="fortune-item-label">행운 색상</span>
+            <span class="fortune-item-value" id="fortuneColor"></span>
+          </div>
+          <div class="fortune-item">
+            <span class="fortune-item-label">행운 숫자</span>
+            <span class="fortune-item-value" id="fortuneLucky"></span>
+          </div>
+        </div>
+        <div class="fortune-share">
+          <button class="share-btn fortune-share-btn" id="fortuneShareBtn">
+            <span>📤</span> 오늘의 번호 공유하기
+          </button>
+        </div>
+      </div>
+    </section>
+
     <!-- 탭 네비게이션 -->
     <nav class="tab-nav">
       <button class="tab-btn active" data-tab="random">
@@ -112,6 +170,10 @@
         <span class="tab-icon">🧠</span>
         <span class="tab-label">MBTI</span>
       </button>
+      <button class="tab-btn" data-tab="chemistry">
+        <span class="tab-icon">💕</span>
+        <span class="tab-label">궁합</span>
+      </button>
     </nav>
 
     <!-- 탭 콘텐츠 -->
@@ -128,11 +190,17 @@
           </label>
           <span class="smart-filter-label">📊 통계 필터</span>
         </div>
-        <button class="generate-btn" id="btn-random">
-          <span class="btn-icon">🎲</span>
-          번호 생성하기
-          <span class="btn-shimmer"></span>
-        </button>
+        <div class="btn-group">
+          <button class="generate-btn" id="btn-random">
+            <span class="btn-icon">🎲</span>
+            번호 생성하기
+            <span class="btn-shimmer"></span>
+          </button>
+          <button class="generate-btn multi-btn" id="btn-random-multi">
+            <span class="btn-icon">🎰</span>
+            5세트 뽑기
+          </button>
+        </div>
         <div class="result-area" id="result-random">
           <div class="balls-container" id="balls-random"></div>
           <div class="analysis-card" id="analysis-random"></div>
@@ -152,11 +220,17 @@
           </label>
           <span class="smart-filter-label">📊 통계 필터</span>
         </div>
-        <button class="generate-btn" id="btn-frequent">
-          <span class="btn-icon">🔥</span>
-          번호 생성하기
-          <span class="btn-shimmer"></span>
-        </button>
+        <div class="btn-group">
+          <button class="generate-btn" id="btn-frequent">
+            <span class="btn-icon">🔥</span>
+            번호 생성하기
+            <span class="btn-shimmer"></span>
+          </button>
+          <button class="generate-btn multi-btn" id="btn-frequent-multi">
+            <span class="btn-icon">🎰</span>
+            5세트 뽑기
+          </button>
+        </div>
         <div class="result-area" id="result-frequent">
           <div class="balls-container" id="balls-frequent"></div>
           <div class="analysis-card" id="analysis-frequent"></div>
@@ -180,11 +254,17 @@
           </label>
           <span class="smart-filter-label">📊 통계 필터</span>
         </div>
-        <button class="generate-btn" id="btn-rare">
-          <span class="btn-icon">❄️</span>
-          번호 생성하기
-          <span class="btn-shimmer"></span>
-        </button>
+        <div class="btn-group">
+          <button class="generate-btn" id="btn-rare">
+            <span class="btn-icon">❄️</span>
+            번호 생성하기
+            <span class="btn-shimmer"></span>
+          </button>
+          <button class="generate-btn multi-btn" id="btn-rare-multi">
+            <span class="btn-icon">🎰</span>
+            5세트 뽑기
+          </button>
+        </div>
         <div class="result-area" id="result-rare">
           <div class="balls-container" id="balls-rare"></div>
           <div class="analysis-card" id="analysis-rare"></div>
@@ -375,7 +455,62 @@
           로또는 완전한 확률 게임입니다. 과도한 구매를 삼가세요.
         </div>
       </div>
+      <!-- 궁합 탭 -->
+      <div class="tab-panel" id="tab-chemistry">
+        <div class="panel-description">
+          <p>두 사람의 이름으로 <strong>로또 궁합</strong>을 확인하고 공동 행운번호를 생성합니다.<br>
+          같은 이름 조합이면 같은 날엔 항상 같은 결과!</p>
+        </div>
+
+        <div class="chemistry-form">
+          <div class="chemistry-inputs">
+            <div class="form-group">
+              <label for="chemName1">나의 이름</label>
+              <input type="text" id="chemName1" placeholder="내 이름" maxlength="10">
+            </div>
+            <div class="chemistry-heart">♡</div>
+            <div class="form-group">
+              <label for="chemName2">상대 이름</label>
+              <input type="text" id="chemName2" placeholder="상대 이름" maxlength="10">
+            </div>
+          </div>
+        </div>
+
+        <button class="generate-btn chemistry-btn" id="btn-chemistry">
+          <span class="btn-icon">💕</span>
+          궁합 번호 뽑기
+          <span class="btn-shimmer"></span>
+        </button>
+
+        <div class="result-area" id="result-chemistry"></div>
+
+        <div class="disclaimer">
+          ⚠️ 궁합 번호는 재미 목적이며, 당첨을 보장하지 않습니다.<br>
+          로또는 완전한 확률 게임입니다. 과도한 구매를 삼가세요.
+        </div>
+      </div>
     </main>
+
+    <!-- 당첨 비교 -->
+    <section class="compare-section">
+      <button class="compare-btn" id="compareBtn">
+        <span>🎯</span> 내 번호 당첨 확인하기
+      </button>
+      <div class="compare-result" id="compareResult" style="display:none"></div>
+    </section>
+
+    <!-- 광고 영역 (AdSense 승인 후 교체) -->
+    <div class="ad-slot" id="ad-slot-1">
+      <!-- Google AdSense 승인 후 아래 주석을 해제하세요
+      <ins class="adsbygoogle"
+        style="display:block"
+        data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+        data-ad-slot="XXXXXXXXXX"
+        data-ad-format="auto"
+        data-full-width-responsive="true"></ins>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+      -->
+    </div>
 
     <!-- 생성 기록 -->
     <section class="history-section">
@@ -399,17 +534,37 @@
     <footer class="app-footer">
       <p>본 앱은 재미 목적으로 만들어졌습니다. 당첨을 보장하지 않습니다.</p>
       <p>데이터 출처: <a href="https://www.dhlottery.co.kr" target="_blank" rel="noopener">동행복권</a></p>
+      <div class="support-section">
+        <button class="support-btn" id="supportBtn">
+          ☕ 개발자 커피 한잔 사주기
+        </button>
+        <div class="support-qr" id="supportQr" style="display:none">
+          <p class="support-qr-title">카카오페이로 송금해주세요!</p>
+          <a href="https://qr.kakaopay.com/FM5t5VmBF" target="_blank" rel="noopener" class="support-qr-link">
+            <img src="카카오톡 송금링크.png" alt="카카오페이 송금 QR" class="support-qr-img">
+          </a>
+          <p class="support-qr-name">관익</p>
+          <a href="https://qr.kakaopay.com/FM5t5VmBF" target="_blank" rel="noopener" class="support-pay-btn">
+            💳 카카오페이로 송금하기
+          </a>
+          <button class="support-qr-close" id="supportQrClose">닫기</button>
+        </div>
+      </div>
     </footer>
   </div>
 
   <!-- Confetti 컨테이너 -->
   <div class="confetti-container" id="confettiContainer" aria-hidden="true"></div>
 
+  <!-- html2canvas (결과 이미지 저장용) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+
   <!-- 스크립트 -->
   <script src="js/data.js"></script>
   <script src="js/analysis.js"></script>
   <script src="js/saju.js"></script>
   <script src="js/name.js"></script>
+  <script src="js/chemistry.js"></script>
   <script src="js/mbti.js"></script>
   <script src="js/explain.js"></script>
   <script src="js/lotto.js"></script>

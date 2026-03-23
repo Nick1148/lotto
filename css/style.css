@@ -49,7 +49,7 @@ html {
 }
 
 body {
-  font-family: 'Gowun Dodum', 'Segoe UI', 'Malgun Gothic', sans-serif;
+  font-family: 'Jua', 'Segoe UI', 'Malgun Gothic', sans-serif;
   background: linear-gradient(160deg, var(--color-bg-start) 0%, var(--color-bg-end) 100%);
   min-height: 100vh;
   color: var(--color-text);
@@ -304,10 +304,15 @@ body {
    Tab Navigation
    =========================== */
 .tab-nav {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   margin-bottom: 16px;
+}
+
+.tab-nav .tab-btn {
+  flex: 1 1 calc(25% - 6px);
+  min-width: 70px;
 }
 
 .tab-btn {
@@ -502,9 +507,16 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 6px;
+  flex-wrap: nowrap;
   padding: 12px 0;
+}
+
+.balls-container .ball {
+  width: 42px;
+  height: 42px;
+  font-size: 0.9rem;
+  flex-shrink: 0;
 }
 
 .ball {
@@ -1154,7 +1166,7 @@ body {
   color: var(--color-text);
   padding: 10px 22px;
   border-radius: 26px;
-  font-family: 'Gowun Dodum', sans-serif;
+  font-family: 'Jua', sans-serif;
   font-size: 0.85rem;
   font-weight: 500;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
@@ -1530,4 +1542,769 @@ body {
   .analysis-score-value {
     font-size: 1rem;
   }
+}
+
+/* ===========================
+   🔥 지옥 이스터에그
+   =========================== */
+.hell-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(ellipse at center, #1a0000 0%, #000000 70%);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  overflow: hidden;
+}
+
+.hell-overlay.active {
+  opacity: 1;
+}
+
+.hell-overlay.fade-out {
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+
+.hell-content {
+  text-align: center;
+  z-index: 2;
+  position: relative;
+}
+
+.hell-text {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #ff1a1a;
+  text-shadow:
+    0 0 10px #ff1a1a,
+    0 0 20px #ff4444,
+    0 0 40px #ff6600,
+    0 0 80px #ff1a1a;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  letter-spacing: 2px;
+}
+
+.hell-text.show {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.hell-sub {
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: #ffffff;
+  text-shadow:
+    0 0 10px #ff1a1a,
+    0 0 30px #ff4444,
+    0 0 60px #ff0000;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s ease;
+  margin-top: 30px;
+  animation: none;
+}
+
+.hell-sub.show {
+  opacity: 1;
+  transform: translateY(0);
+  animation: hell-tremble 0.1s infinite;
+}
+
+@keyframes hell-tremble {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-2px, 1px); }
+  50% { transform: translate(2px, -1px); }
+  75% { transform: translate(-1px, -2px); }
+}
+
+/* 화면 흔들림 */
+.hell-shake {
+  animation: hell-shake-anim 0.4s ease-in-out 3;
+}
+
+@keyframes hell-shake-anim {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
+}
+
+/* 불꽃 파티클 */
+.hell-fire-container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.hell-fire {
+  position: absolute;
+  bottom: -50px;
+  font-size: 2rem;
+  animation: hell-fire-rise linear infinite;
+  opacity: 0;
+}
+
+/* ===========================
+   공유 버튼
+   =========================== */
+.share-bar {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--color-border);
+}
+
+.share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-family: 'Jua', sans-serif;
+  cursor: pointer;
+  transition: var(--transition);
+  color: var(--color-text);
+  background: rgba(255, 126, 179, 0.1);
+}
+
+.share-btn:hover {
+  background: rgba(255, 126, 179, 0.25);
+  transform: translateY(-1px);
+}
+
+.share-btn:active {
+  transform: scale(0.96);
+}
+
+.share-btn span {
+  font-size: 1rem;
+}
+
+/* ===========================
+   광고 영역
+   =========================== */
+.ad-slot {
+  width: 100%;
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 20px 0;
+  border-radius: var(--border-radius-sm);
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px dashed var(--color-border);
+  color: var(--color-text-light);
+  font-size: 0.8rem;
+}
+
+/* ===========================
+   후원 버튼
+   =========================== */
+.support-section {
+  text-align: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--color-border);
+}
+
+.support-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 24px;
+  border: 2px solid var(--color-primary);
+  border-radius: 30px;
+  background: rgba(255, 126, 179, 0.12);
+  color: var(--color-primary);
+  font-size: 0.95rem;
+  font-family: 'Jua', sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  transition: var(--transition);
+  animation: supportPulse 3s ease-in-out infinite;
+}
+
+@keyframes supportPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 126, 179, 0); }
+  50% { box-shadow: 0 0 0 6px rgba(255, 126, 179, 0.15); }
+}
+
+.support-btn:hover {
+  background: rgba(255, 126, 179, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(255, 126, 179, 0.3);
+}
+
+.support-qr {
+  margin-top: 16px;
+  padding: 20px;
+  background: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-card);
+  text-align: center;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.support-qr-title {
+  font-size: 0.95rem;
+  color: var(--color-text);
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+
+.support-qr-img {
+  width: 200px;
+  height: 200px;
+  border-radius: 12px;
+}
+
+.support-qr-name {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.support-qr-link {
+  display: block;
+}
+
+.support-pay-btn {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 10px 24px;
+  background: #fee500;
+  color: #3c1e1e;
+  border-radius: 8px;
+  font-family: 'Jua', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.support-pay-btn:hover {
+  background: #fdd835;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(254,229,0,0.4);
+}
+
+.support-qr-close {
+  margin-top: 12px;
+  padding: 6px 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: 'Jua', sans-serif;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+@keyframes hell-fire-rise {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(-100vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* ===========================
+   오늘의 운세 번호 카드
+   =========================== */
+.daily-fortune {
+  margin-bottom: 16px;
+}
+
+.fortune-card {
+  background: linear-gradient(135deg, rgba(255,126,179,0.12), rgba(180,167,214,0.12));
+  border: 2px solid rgba(255,126,179,0.2);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.fortune-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.fortune-date {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.fortune-badge {
+  background: var(--color-primary);
+  color: white;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.fortune-title {
+  font-size: 1.2rem;
+  color: var(--color-text);
+  margin-bottom: 16px;
+}
+
+.fortune-balls {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+  margin-bottom: 16px;
+}
+
+.fortune-balls .ball {
+  width: 42px;
+  height: 42px;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.fortune-meta {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.fortune-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.fortune-item-label {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+}
+
+.fortune-item-value {
+  font-size: 0.9rem;
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.fortune-share {
+  margin-top: 8px;
+}
+
+.fortune-share-btn {
+  background: rgba(255,126,179,0.15) !important;
+}
+
+/* ===========================
+   버튼 그룹 (1세트 + 5세트)
+   =========================== */
+.btn-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.btn-group .generate-btn {
+  width: 100%;
+}
+
+.multi-btn {
+  width: 100%;
+  font-size: 0.85rem !important;
+  padding: 10px 14px !important;
+  background: linear-gradient(135deg, var(--color-lavender), var(--color-secondary)) !important;
+  white-space: nowrap;
+}
+
+/* ===========================
+   5세트 결과 (로또 용지)
+   =========================== */
+.multi-set-container {
+  background: white;
+  border-radius: var(--border-radius);
+  padding: 16px;
+  box-shadow: var(--shadow-card);
+  border-left: 4px solid var(--color-primary);
+}
+
+.multi-set-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--color-border);
+  animation: fadeIn 0.3s ease both;
+}
+
+.multi-set-row:last-child {
+  border-bottom: none;
+}
+
+.multi-set-label {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.multi-set-balls {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+/* ===========================
+   당첨 비교
+   =========================== */
+.compare-section {
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.compare-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 28px;
+  border: 2px solid var(--color-lemon);
+  border-radius: 30px;
+  background: rgba(255,217,102,0.15);
+  color: var(--color-text);
+  font-family: 'Jua', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.compare-btn:hover {
+  background: rgba(255,217,102,0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(255,217,102,0.3);
+}
+
+.compare-result {
+  margin-top: 16px;
+  text-align: left;
+}
+
+.compare-header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.compare-header h3 {
+  font-size: 1rem;
+  color: var(--color-text);
+  margin-bottom: 8px;
+}
+
+.compare-latest-balls {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+}
+
+.compare-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.compare-item {
+  background: white;
+  border-radius: var(--border-radius-sm);
+  padding: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  border-left: 4px solid #eee;
+}
+
+.compare-item.match-3 { border-left-color: #b0d840; }
+.compare-item.match-4 { border-left-color: #ffd966; }
+.compare-item.match-5 { border-left-color: #ff7272; }
+.compare-item.match-5b { border-left-color: #69c8f2; }
+.compare-item.match-6 { border-left-color: #ff7eb3; background: rgba(255,126,179,0.05); }
+
+.compare-item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.compare-method {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.compare-match-badge {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.compare-balls {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.ball-matched {
+  box-shadow: 0 0 0 3px rgba(255,126,179,0.5), var(--shadow-ball) !important;
+  transform: scale(1.1);
+}
+
+.ball-dimmed {
+  opacity: 0.4;
+}
+
+.compare-empty {
+  text-align: center;
+  padding: 20px;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+/* ===========================
+   궁합 탭 스타일
+   =========================== */
+.chemistry-form {
+  margin-bottom: 16px;
+}
+
+.chemistry-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chemistry-inputs .form-group {
+  flex: 1;
+}
+
+.chemistry-heart {
+  font-size: 1.5rem;
+  color: var(--color-primary);
+  animation: heartBeat 1.5s ease-in-out infinite;
+  flex-shrink: 0;
+  padding-top: 20px;
+}
+
+@keyframes heartBeat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+.chemistry-btn {
+  background: linear-gradient(135deg, var(--color-primary), #ff5a9e) !important;
+}
+
+/* 궁합 결과 카드 */
+.chemistry-result-card {
+  background: linear-gradient(135deg, #fff5f9, #fce4f0, #f3e8ff);
+  border-radius: 20px;
+  padding: 24px 16px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(255, 126, 179, 0.15);
+  border: 2px solid rgba(255, 126, 179, 0.2);
+  animation: fadeInUp 0.5s ease;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.chem-card-header {
+  font-size: 1.1rem;
+  color: var(--color-primary);
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.chem-names {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 16px;
+}
+
+.chem-heart-icon {
+  color: var(--color-primary);
+  display: inline-block;
+  animation: heartBeat 1.5s ease-in-out infinite;
+}
+
+.chem-score-area {
+  margin-bottom: 16px;
+}
+
+.chem-score-label {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.chem-score-number {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.chem-score-bar {
+  height: 12px;
+  background: rgba(255, 126, 179, 0.15);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.chem-score-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary), #ff5a9e, var(--color-lavender));
+  border-radius: 6px;
+  transition: width 0.05s linear;
+}
+
+.chem-element-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.chem-elem {
+  background: rgba(255, 126, 179, 0.1);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.chem-elem-x {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+
+.chem-element-desc {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin-bottom: 16px;
+}
+
+.chem-numbers-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 8px;
+}
+
+.chem-balls {
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.chem-comment {
+  font-size: 0.95rem;
+  color: var(--color-primary);
+  font-weight: 700;
+  padding: 8px;
+  background: rgba(255, 126, 179, 0.08);
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+
+.chem-watermark {
+  font-size: 0.7rem;
+  color: var(--color-text-light);
+}
+
+/* 궁합 메서드 색상 */
+.method-chemistry {
+  background: linear-gradient(135deg, var(--color-primary), #ff5a9e) !important;
+  color: white !important;
+}
+
+/* ===========================
+   인라인 후원 nudge
+   =========================== */
+.result-support-nudge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  margin-top: 12px;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  border-top: 1px dashed var(--color-border);
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.nudge-link {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.85rem;
+  transition: var(--transition);
+}
+
+.nudge-link:hover {
+  color: #ff5a9e;
 }

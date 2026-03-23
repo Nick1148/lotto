@@ -133,5 +133,5 @@ const NameGenerator = (() => {
     };
   }
 
-  return { getNameNumbers };
+  return { getNameNumbers, calcSeed, getElement };
 })();
