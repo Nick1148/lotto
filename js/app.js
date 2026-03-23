@@ -34,6 +34,12 @@ const STORAGE_KEY = 'lotto_history';
 
 // ─── 초기화 ───────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
+  // Kakao SDK 초기화 (사용자 앱 키 필요)
+  if (typeof Kakao !== 'undefined') {
+    Kakao.init('3fe6822c969a8fe0db7f40bf57a5758c');
+    Kakao.isInitialized();
+  }
+
   await initData();
   initTabs();
   initButtons();
@@ -807,6 +813,38 @@ function initDailyFortune() {
       }
     });
   }
+
+  // 카카오톡 오늘의 번호 공유
+  const kakaoBtn = document.getElementById('fortuneKakaoBtn');
+  if (kakaoBtn) {
+    kakaoBtn.addEventListener('click', () => {
+      if (typeof Kakao !== 'undefined' && Kakao.isInitialized()) {
+        Kakao.Share.sendDefault({
+          objectType: 'feed',
+          content: {
+            title: '🍀 오늘의 행운 번호',
+            description: '오늘의 행운 번호를 뽑아봤어! 🍀\n나만의 행운의 로또 번호를 확인해보세요.',
+            imageUrl: 'https://nick1148.site/og-image.png',
+            link: {
+              mobileWebUrl: 'https://nick1148.site',
+              webUrl: 'https://nick1148.site',
+            },
+          },
+          buttons: [
+            {
+              title: '나도 번호 뽑아보기',
+              link: {
+                mobileWebUrl: 'https://nick1148.site',
+                webUrl: 'https://nick1148.site',
+              },
+            },
+          ],
+        });
+      } else {
+        showToast('카카오톡 공유를 이용하려면 앱 키가 필요합니다.');
+      }
+    });
+  }
 }
 
 function generateDailyNumbers(seed) {
@@ -1005,10 +1043,45 @@ function createShareButtons(tabId, numbers, methodName) {
     <button class="share-btn share-image" title="이미지 저장">
       <span>📸</span> 이미지 저장
     </button>
+    <button class="share-btn share-kakao" title="카카오톡 공유">
+      <span>💬</span> 카톡 공유
+    </button>
     <button class="share-btn share-native" title="공유하기" style="display:none">
       <span>📤</span> 공유
     </button>
   `;
+
+  // 카카오톡 공유
+  const kakaoBtn = bar.querySelector('.share-kakao');
+  if (kakaoBtn) {
+    kakaoBtn.addEventListener('click', () => {
+      if (typeof Kakao !== 'undefined' && Kakao.isInitialized()) {
+        Kakao.Share.sendDefault({
+          objectType: 'feed',
+          content: {
+            title: '🍀 로또 번호 예상기',
+            description: '오늘의 행운 번호를 뽑아봤어! 🍀\n나만의 행운의 로또 번호를 확인해보세요.',
+            imageUrl: 'https://nick1148.site/og-image.png',
+            link: {
+              mobileWebUrl: 'https://nick1148.site',
+              webUrl: 'https://nick1148.site',
+            },
+          },
+          buttons: [
+            {
+              title: '나도 번호 뽑아보기',
+              link: {
+                mobileWebUrl: 'https://nick1148.site',
+                webUrl: 'https://nick1148.site',
+              },
+            },
+          ],
+        });
+      } else {
+        showToast('카카오톡 공유를 이용하려면 앱 키가 필요합니다.');
+      }
+    });
+  }
 
   // 링크 복사
   bar.querySelector('.share-copy').addEventListener('click', () => {
@@ -1128,8 +1201,41 @@ function displayChemistryResult(result) {
     <button class="share-btn share-copy"><span>📋</span> 복사</button>
     <button class="share-btn share-image"><span>📸</span> 이미지</button>
     <button class="share-btn share-story"><span>📱</span> 스토리용</button>
+    <button class="share-btn share-kakao"><span>💬</span> 카톡 공유</button>
     <button class="share-btn share-native" style="display:none"><span>📤</span> 공유</button>
   `;
+
+  // 카카오톡 공유
+  const kakaoBtn = shareBar.querySelector('.share-kakao');
+  if (kakaoBtn) {
+    kakaoBtn.addEventListener('click', () => {
+      if (typeof Kakao !== 'undefined' && Kakao.isInitialized()) {
+        Kakao.Share.sendDefault({
+          objectType: 'feed',
+          content: {
+            title: '💕 궁합 결과 도착!',
+            description: `나와 ${result.name2}의 궁합 점수: ${result.score}점! 💕 너도 해봐!`,
+            imageUrl: 'https://nick1148.site/og-image.png',
+            link: {
+              mobileWebUrl: 'https://nick1148.site',
+              webUrl: 'https://nick1148.site',
+            },
+          },
+          buttons: [
+            {
+              title: '나도 궁합 보기',
+              link: {
+                mobileWebUrl: 'https://nick1148.site',
+                webUrl: 'https://nick1148.site',
+              },
+            },
+          ],
+        });
+      } else {
+        showToast('카카오톡 공유를 이용하려면 앱 키가 필요합니다.');
+      }
+    });
+  }
 
   shareBar.querySelector('.share-copy').addEventListener('click', () => {
     navigator.clipboard.writeText(shareText).then(() => {
