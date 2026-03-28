@@ -2958,39 +2958,8 @@ body {
 }
 
 /* ===========================
-   Support Section - Multi Payment
+   Support Section
    =========================== */
-.support-pay-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.toss-pay {
-  background: #0064ff !important;
-  color: white !important;
-}
-.toss-pay:hover {
-  background: #0050cc !important;
-}
-
-.bmc-pay {
-  background: #ffdd00 !important;
-  color: #000000 !important;
-  font-weight: 700;
-}
-.bmc-pay:hover {
-  background: #e6c700 !important;
-}
-
-.paypal-pay {
-  background: #0070ba !important;
-  color: white !important;
-}
-.paypal-pay:hover {
-  background: #005ea6 !important;
-}
 
 /* ===========================
    Premium Gate - Buy Clovers Button
@@ -3108,4 +3077,573 @@ body {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
+}
+
+/* ============================================================
+   UI/UX 대개편 — 사주 히어로 + 프리미엄 모달 + 컴팩트 헤더
+   ============================================================ */
+
+/* --- 캐릭터 축소 --- */
+.character-area {
+  margin-bottom: 4px;
+}
+
+/* --- 컴팩트 바 (미션/랭킹) --- */
+.compact-bar {
+  font-size: 0.8rem;
+  padding: 6px 12px !important;
+  margin-bottom: 6px;
+}
+
+/* --- 일일운세 컴팩트 --- */
+.daily-fortune-compact {
+  margin-bottom: 12px;
+}
+.fortune-card-compact {
+  padding: 12px 16px;
+}
+.fortune-compact-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.fortune-title-compact {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+.fortune-balls-compact {
+  margin-bottom: 8px;
+}
+.fortune-meta-compact {
+  display: flex;
+  gap: 12px;
+  font-size: 0.75rem;
+  margin-bottom: 8px;
+}
+
+/* ==============================
+   사주 히어로 섹션
+   ============================== */
+.saju-hero {
+  margin-bottom: 20px;
+}
+.saju-hero-card {
+  background: linear-gradient(135deg, rgba(126,200,200,0.15), rgba(180,167,214,0.15), rgba(255,126,179,0.1));
+  border: 2px solid rgba(126,200,200,0.3);
+  border-radius: 20px;
+  padding: 24px 20px;
+  position: relative;
+  overflow: hidden;
+}
+.saju-hero-card::before {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: radial-gradient(ellipse at 30% 20%, rgba(255,215,0,0.06) 0%, transparent 60%);
+  pointer-events: none;
+}
+.saju-hero-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.saju-hero-icon {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 8px;
+  animation: float 3s ease-in-out infinite;
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.saju-hero-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 6px;
+}
+.saju-hero-sub {
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+.saju-hero-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.saju-hero-pillars {
+  margin-bottom: 12px;
+}
+.saju-hero-btn {
+  width: 100%;
+  padding: 16px;
+  font-size: 1.1rem;
+  background: linear-gradient(135deg, #7ec8c8, #b4a7d6, #ff7eb3);
+  border: none;
+  border-radius: 16px;
+  color: white;
+  font-weight: 700;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(126,200,200,0.4);
+  animation: heroGlow 3s ease-in-out infinite;
+}
+@keyframes heroGlow {
+  0%, 100% { box-shadow: 0 4px 20px rgba(126,200,200,0.4); }
+  50% { box-shadow: 0 6px 30px rgba(180,167,214,0.6); }
+}
+.saju-hero-btn:active {
+  transform: scale(0.98);
+}
+.saju-hero-disclaimer {
+  margin-top: 12px;
+  font-size: 0.72rem;
+  text-align: center;
+}
+
+/* ==============================
+   프리미엄 버튼 강화
+   ============================== */
+.explain-premium-btn {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 14px 20px;
+  font-size: 0.9rem;
+  border-radius: 14px;
+  font-weight: 700;
+  text-align: center;
+  transition: var(--transition);
+}
+.explain-premium-btn.free-trial {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border: none;
+  color: white;
+  box-shadow: 0 4px 20px rgba(102,126,234,0.4);
+  animation: premiumGlow 2s ease-in-out infinite;
+}
+@keyframes premiumGlow {
+  0%, 100% { box-shadow: 0 4px 20px rgba(102,126,234,0.4); }
+  50% { box-shadow: 0 4px 30px rgba(102,126,234,0.7); }
+}
+.explain-premium-btn:not(.free-trial) {
+  background: linear-gradient(135deg, #ffd700, #ffb347);
+  border: none;
+  color: #5d4037;
+  box-shadow: 0 2px 12px rgba(255,215,0,0.3);
+}
+.explain-premium-btn:active {
+  transform: scale(0.97);
+}
+
+/* ==============================
+   프리미엄 상세 해석 모달
+   ============================== */
+.premium-detail-sheet {
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 24px 24px 0 0;
+  padding: 24px 20px 32px;
+  -webkit-overflow-scrolling: touch;
+}
+.premium-detail-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.premium-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #ffd700, #ffb347);
+  color: #5d4037;
+  padding: 4px 16px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+.premium-detail-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.premium-detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.premium-section-card {
+  background: linear-gradient(135deg, rgba(255,245,249,0.9), rgba(243,232,255,0.9));
+  border: 1px solid rgba(180,167,214,0.2);
+  border-radius: 14px;
+  padding: 16px;
+  transition: var(--transition);
+}
+.premium-section-card:hover {
+  box-shadow: 0 2px 12px rgba(180,167,214,0.2);
+}
+.premium-section-card h3 {
+  font-size: 0.95rem;
+  color: var(--color-primary);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.premium-section-card h3 .card-icon {
+  font-size: 1.1rem;
+}
+.premium-section-card p {
+  font-size: 0.85rem;
+  line-height: 1.7;
+  color: var(--color-text);
+  white-space: pre-line;
+}
+
+/* ==============================
+   프리미엄 공통 디자인 언어
+   ============================== */
+.premium-feature {
+  position: relative;
+}
+.premium-feature::after {
+  content: '✨';
+  position: absolute;
+  top: -6px;
+  right: -2px;
+  font-size: 0.8rem;
+  pointer-events: none;
+}
+.premium-cost {
+  display: inline-flex;
+  align-items: center;
+  background: linear-gradient(135deg, #ffd700, #ffb347);
+  color: #5d4037;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-left: 6px;
+}
+.premium-btn {
+  border: 2px solid rgba(255,215,0,0.4) !important;
+}
+.premium-btn:hover {
+  border-color: rgba(255,215,0,0.7) !important;
+}
+
+/* ============================================================
+   🍀 김다현 이스터에그 — 행복 꽃비
+   ============================================================ */
+.dahyun-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: radial-gradient(ellipse at 50% 40%, #fffbe8 0%, #f0fff0 30%, #e8f5e9 60%, #c8e6c9 100%);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+  overflow: hidden;
+}
+.dahyun-overlay.active {
+  opacity: 1;
+}
+.dahyun-overlay.fade-out {
+  opacity: 0;
+  transition: opacity 1.5s ease;
+}
+
+/* 빛나는 배경 링 */
+.dahyun-glow-ring {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 300px; height: 300px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,215,0,0.3) 0%, rgba(168,230,207,0.2) 40%, transparent 70%);
+  animation: dahyun-glow-pulse 3s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes dahyun-glow-pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+  50% { transform: translate(-50%, -50%) scale(1.5); opacity: 1; }
+}
+
+/* 콘텐츠 영역 */
+.dahyun-content {
+  text-align: center;
+  z-index: 3;
+  position: relative;
+  padding: 0 24px;
+  max-width: 400px;
+}
+
+/* 큰 클로버 */
+.dahyun-clover-big {
+  font-size: 4rem;
+  opacity: 0;
+  transform: scale(0) rotate(-180deg);
+  transition: all 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  filter: drop-shadow(0 0 20px rgba(76,175,80,0.6));
+  margin-bottom: 16px;
+}
+.dahyun-clover-big.show {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+  animation: dahyun-clover-float 3s ease-in-out infinite;
+}
+@keyframes dahyun-clover-float {
+  0%, 100% { transform: scale(1) translateY(0) rotate(0deg); }
+  25% { transform: scale(1.05) translateY(-8px) rotate(3deg); }
+  75% { transform: scale(1.05) translateY(-8px) rotate(-3deg); }
+}
+
+/* 타이틀 */
+.dahyun-title {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: #2e7d32;
+  text-shadow: 0 0 20px rgba(76,175,80,0.4), 0 2px 8px rgba(0,0,0,0.1);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.8s ease;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+.dahyun-title.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 메시지 */
+.dahyun-message {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #4a7c59;
+  line-height: 1.8;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 1s ease;
+  margin-bottom: 24px;
+  text-shadow: 0 1px 4px rgba(255,255,255,0.8);
+}
+.dahyun-message.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 축복 */
+.dahyun-bless {
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: #ff7eb3;
+  text-shadow:
+    0 0 10px rgba(255,126,179,0.5),
+    0 0 30px rgba(255,126,179,0.3);
+  opacity: 0;
+  transform: scale(0.8);
+  transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  margin-bottom: 20px;
+}
+.dahyun-bless.show {
+  opacity: 1;
+  transform: scale(1);
+  animation: dahyun-bless-glow 2s ease-in-out infinite;
+}
+@keyframes dahyun-bless-glow {
+  0%, 100% { text-shadow: 0 0 10px rgba(255,126,179,0.5), 0 0 30px rgba(255,126,179,0.3); }
+  50% { text-shadow: 0 0 20px rgba(255,126,179,0.8), 0 0 50px rgba(255,126,179,0.5), 0 0 80px rgba(255,215,0,0.3); }
+}
+
+/* 클로버 카운트 */
+.dahyun-clover-count {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #ffd700;
+  text-shadow:
+    0 0 10px rgba(255,215,0,0.6),
+    0 0 30px rgba(255,215,0,0.4),
+    0 0 60px rgba(255,215,0,0.2);
+  opacity: 0;
+  transform: scale(0.5);
+  transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.dahyun-clover-count.show {
+  opacity: 1;
+  transform: scale(1);
+}
+.dahyun-count-sub {
+  display: block;
+  font-size: 0.85rem;
+  color: #66bb6a;
+  margin-top: 8px;
+  font-weight: 700;
+}
+
+/* 꽃비 파티클 */
+.dahyun-particles {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+.dahyun-petal {
+  position: absolute;
+  top: -60px;
+  animation: dahyun-petal-fall linear infinite;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
+@keyframes dahyun-petal-fall {
+  0% {
+    transform: translateY(-60px) rotate(0deg) scale(1);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110vh) rotate(720deg) scale(0.5);
+    opacity: 0.3;
+  }
+}
+
+/* 바닥 꽃밭 */
+.dahyun-ground-flowers {
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 100%; height: 80px;
+  pointer-events: none;
+  z-index: 1;
+}
+.dahyun-ground-flower {
+  position: absolute;
+  bottom: -10px;
+  animation: dahyun-ground-grow 1s ease forwards;
+  opacity: 0;
+}
+@keyframes dahyun-ground-grow {
+  0% { transform: scale(0) translateY(20px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 0.7; }
+}
+
+/* ============================================================
+   로그인 모달 + 헤더 버튼
+   ============================================================ */
+.login-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.login-btn:hover {
+  transform: scale(1.1);
+  border-color: var(--color-primary);
+}
+.login-user-name {
+  font-size: 0.7rem;
+  color: var(--color-text-secondary);
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 로그인 모달 */
+.login-sheet {
+  text-align: center;
+  padding: 32px 24px;
+}
+.login-header {
+  margin-bottom: 20px;
+}
+.login-icon {
+  font-size: 2.5rem;
+  margin-bottom: 8px;
+}
+.login-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 8px;
+}
+.login-desc {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+.login-benefits {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+  text-align: left;
+  padding: 16px;
+  background: rgba(126,200,200,0.08);
+  border-radius: 12px;
+}
+.login-benefit-item {
+  font-size: 0.85rem;
+  color: var(--color-text);
+  font-weight: 600;
+}
+.login-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.login-google-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px;
+  background: white;
+  border: 2px solid #dadce0;
+  border-radius: 14px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #3c4043;
+  cursor: pointer;
+  font-family: inherit;
+  transition: var(--transition);
+}
+.login-google-btn:hover {
+  background: #f8f9fa;
+  border-color: #4285f4;
+  box-shadow: 0 2px 12px rgba(66,133,244,0.2);
+}
+.login-google-btn:active {
+  transform: scale(0.98);
+}
+.login-google-btn svg {
+  flex-shrink: 0;
+}
+.login-skip {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  text-decoration: underline;
+  margin: 0;
+}
+.login-skip:hover {
+  color: var(--color-primary);
 }

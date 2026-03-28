@@ -31,7 +31,9 @@ const GameSystem = (() => {
     dailyMissionDate: null,
     dailyMissionDone: false,
     firstVisit: true,
-    freePremiumUsed: { sajuDetail: false, chemDetail: false, nameDetail: false }
+    freePremiumUsed: { sajuDetail: false, chemDetail: false, nameDetail: false },
+    lastCloverClaim: null,
+    lastCloverTier: null
   };
 
   let state = null;
@@ -90,6 +92,26 @@ const GameSystem = (() => {
   }
 
   function save() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) { /* ignore */ }
+    // 로그인 상태면 클라우드 동기화 (디바운스)
+    if (typeof AuthSystem !== 'undefined' && AuthSystem.isLoggedIn()) {
+      clearTimeout(save._cloudTimer);
+      save._cloudTimer = setTimeout(() => AuthSystem.syncToCloud(), 2000);
+    }
+  }
+  save._cloudTimer = null;
+
+  // ─── 클라우드 연동 ────────────────────────────────────
+  function getState() {
+    return state ? { ...state } : { ...DEFAULT_STATE };
+  }
+
+  function loadFromCloud(cloudData) {
+    if (!cloudData) return;
+    state = { ...DEFAULT_STATE, ...cloudData };
+    // localStorage에만 반영 (클라우드 재싱크 방지)
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch (e) { /* ignore */ }
@@ -505,6 +527,7 @@ const GameSystem = (() => {
     getMbtiRanking, getStats,
     checkFreePremium, useFreePremium,
     claimCloverPurchase, canClaimToday, CLOVER_TIERS,
+    getState, loadFromCloud,
     ACHIEVEMENTS, LEVELS
   };
 })();

@@ -101,7 +101,7 @@
     <!-- 캐릭터 -->
     <div class="character-area">
       <div class="character char-idle" id="character">
-        <svg viewBox="0 0 120 120" width="120" height="120" xmlns="http://www.w3.org/2000/svg">
+        <svg viewBox="0 0 120 120" width="80" height="80" xmlns="http://www.w3.org/2000/svg">
           <!-- 왕관 -->
           <g class="crown">
             <polygon points="48,22 52,12 56,20 60,10 64,20 68,12 72,22" fill="#ffd966" stroke="#f0c040" stroke-width="1"/>
@@ -156,6 +156,8 @@
             <span class="clover-count" id="cloverCount">0</span>
           </div>
           <button class="trophy-btn" id="trophyBtn" title="업적">🏆</button>
+          <button class="login-btn" id="loginBtn" title="로그인">👤</button>
+          <span class="login-user-name" id="loginUserName" style="display:none"></span>
         </div>
       </div>
       <div class="level-bar" id="levelBar">
@@ -171,30 +173,30 @@
       </div>
     </header>
 
-    <!-- 오늘의 미션 -->
-    <div class="daily-mission-bar" id="dailyMissionBar" style="display:none">
+    <!-- 오늘의 미션 (컴팩트) -->
+    <div class="daily-mission-bar compact-bar" id="dailyMissionBar" style="display:none">
       <span class="mission-icon">🎯</span>
       <span class="mission-text" id="dailyMissionText"></span>
       <span class="mission-reward">+1🍀</span>
     </div>
 
-    <!-- MBTI 오늘의 랭킹 (Phase 4) -->
-    <div class="mbti-ranking-banner" id="mbtiRankingBanner" style="display:none">
+    <!-- MBTI 오늘의 랭킹 (컴팩트 — 탭으로 펼침) -->
+    <div class="mbti-ranking-banner compact-bar" id="mbtiRankingBanner" style="display:none">
       <span class="ranking-title" data-i18n="ranking.title">오늘의 MBTI 행운 랭킹</span>
       <div class="ranking-top3" id="rankingTop3"></div>
       <button class="ranking-more-btn" id="rankingMoreBtn">전체 보기</button>
     </div>
 
-    <!-- 오늘의 운세 번호 -->
-    <section class="daily-fortune" id="dailyFortune">
-      <div class="fortune-card">
-        <div class="fortune-header">
-          <span class="fortune-date" id="fortuneDate"></span>
+    <!-- 오늘의 운세 번호 (컴팩트) -->
+    <section class="daily-fortune daily-fortune-compact" id="dailyFortune">
+      <div class="fortune-card fortune-card-compact">
+        <div class="fortune-compact-row">
           <span class="fortune-badge">TODAY</span>
+          <span class="fortune-date" id="fortuneDate"></span>
+          <span class="fortune-title-compact" data-i18n="fortune.title">오늘의 행운 번호</span>
         </div>
-        <h2 class="fortune-title" data-i18n="fortune.title">오늘의 행운 번호</h2>
-        <div class="fortune-balls" id="fortuneBalls"></div>
-        <div class="fortune-meta">
+        <div class="fortune-balls fortune-balls-compact" id="fortuneBalls"></div>
+        <div class="fortune-meta fortune-meta-compact">
           <div class="fortune-item">
             <span class="fortune-item-label" data-i18n="fortune.score">행운 점수</span>
             <span class="fortune-item-value" id="fortuneScore"></span>
@@ -219,6 +221,68 @@
       </div>
     </section>
 
+    <!-- ✨ 사주 히어로 섹션 (메인 기능) -->
+    <section class="saju-hero" id="sajuHero">
+      <div class="saju-hero-card">
+        <div class="saju-hero-header">
+          <span class="saju-hero-icon">✨</span>
+          <h2 class="saju-hero-title">사주로 내 행운번호 알아보기</h2>
+          <p class="saju-hero-sub">생년월일 기반 사주(四柱) 분석으로 나만의 번호를 찾아보세요</p>
+        </div>
+        <div class="saju-hero-form">
+          <div class="form-group">
+            <label for="heroBirthDate" data-i18n="form.birthdate">생년월일</label>
+            <input type="date" id="heroBirthDate" min="1930-01-01" max="2010-12-31" value="1990-01-01">
+          </div>
+          <div class="form-group">
+            <label for="heroBirthHour"><span data-i18n="form.birthtime">태어난 시간</span> <span class="optional" data-i18n="form.birthtime_optional">(선택)</span></label>
+            <select id="heroBirthHour">
+              <option value="-1">모름 / 선택 안함</option>
+              <option value="0">자시 (23:00~01:00)</option>
+              <option value="1">축시 (01:00~03:00)</option>
+              <option value="2">인시 (03:00~05:00)</option>
+              <option value="3">묘시 (05:00~07:00)</option>
+              <option value="4">진시 (07:00~09:00)</option>
+              <option value="5">사시 (09:00~11:00)</option>
+              <option value="6">오시 (11:00~13:00)</option>
+              <option value="7">미시 (13:00~15:00)</option>
+              <option value="8">신시 (15:00~17:00)</option>
+              <option value="9">유시 (17:00~19:00)</option>
+              <option value="10">술시 (19:00~21:00)</option>
+              <option value="11">해시 (21:00~23:00)</option>
+            </select>
+          </div>
+        </div>
+        <div class="saju-hero-pillars" id="heroSajuPillars" style="display:none">
+          <div class="saju-pillars" id="heroSajuPillarsInner"></div>
+        </div>
+        <div class="smart-filter-row">
+          <label class="smart-filter-toggle">
+            <input type="checkbox" class="smart-filter-checkbox" data-tab="saju-hero">
+            <span class="smart-filter-slider"></span>
+          </label>
+          <span class="smart-filter-label">📊 통계 필터</span>
+        </div>
+        <button class="generate-btn saju-hero-btn" id="btn-saju-hero">
+          <span class="btn-icon">✨</span>
+          사주 번호 생성하기
+          <span class="btn-shimmer"></span>
+        </button>
+        <div class="result-area" id="result-saju-hero">
+          <div class="balls-container" id="balls-saju-hero"></div>
+          <div class="analysis-card" id="analysis-saju-hero"></div>
+          <div class="explain-box" id="explain-saju" style="display:none">
+            <div class="explain-icon">💬</div>
+            <p class="explain-text"></p>
+          </div>
+          <div class="freq-chart" id="freq-saju-hero"></div>
+        </div>
+        <div class="disclaimer saju-hero-disclaimer">
+          ⚠️ 사주 기반 번호는 재미 목적이며, 당첨을 보장하지 않습니다.
+        </div>
+      </div>
+    </section>
+
     <!-- 탭 네비게이션 -->
     <nav class="tab-nav">
       <button class="tab-btn active" data-tab="random">
@@ -232,10 +296,6 @@
       <button class="tab-btn" data-tab="rare">
         <span class="tab-icon">❄️</span>
         <span class="tab-label" data-i18n="tab.rare">안 나온</span>
-      </button>
-      <button class="tab-btn" data-tab="saju">
-        <span class="tab-icon">✨</span>
-        <span class="tab-label" data-i18n="tab.saju">내 사주</span>
       </button>
       <button class="tab-btn" data-tab="name">
         <span class="tab-icon">📛</span>
@@ -363,72 +423,6 @@
         <div class="top-numbers-info" id="bottom15-info">
           <h3>❄️ 출현 빈도 하위 15개</h3>
           <div class="info-balls" id="bottom15-balls"></div>
-        </div>
-      </div>
-
-      <!-- 내 사주 탭 -->
-      <div class="tab-panel" id="tab-saju">
-        <div class="panel-description">
-          <p>생년월일을 기반으로 사주(四柱)를 계산하여 번호를 생성합니다.<br>
-          같은 생년월일이면 항상 같은 번호가 나옵니다.</p>
-        </div>
-
-        <div class="saju-form">
-          <div class="form-group">
-            <label for="birthDate" data-i18n="form.birthdate">생년월일</label>
-            <input type="date" id="birthDate" min="1930-01-01" max="2010-12-31"
-              value="1990-01-01">
-          </div>
-          <div class="form-group">
-            <label for="birthHour"><span data-i18n="form.birthtime">태어난 시간</span> <span class="optional" data-i18n="form.birthtime_optional">(선택)</span></label>
-            <select id="birthHour">
-              <option value="-1">모름 / 선택 안함</option>
-              <option value="0">자시 (23:00~01:00)</option>
-              <option value="1">축시 (01:00~03:00)</option>
-              <option value="2">인시 (03:00~05:00)</option>
-              <option value="3">묘시 (05:00~07:00)</option>
-              <option value="4">진시 (07:00~09:00)</option>
-              <option value="5">사시 (09:00~11:00)</option>
-              <option value="6">오시 (11:00~13:00)</option>
-              <option value="7">미시 (13:00~15:00)</option>
-              <option value="8">신시 (15:00~17:00)</option>
-              <option value="9">유시 (17:00~19:00)</option>
-              <option value="10">술시 (19:00~21:00)</option>
-              <option value="11">해시 (21:00~23:00)</option>
-            </select>
-          </div>
-          <div class="saju-result-display" id="sajuDisplay" style="display:none">
-            <div class="saju-pillars" id="sajuPillars"></div>
-          </div>
-        </div>
-
-        <div class="smart-filter-row">
-          <label class="smart-filter-toggle">
-            <input type="checkbox" class="smart-filter-checkbox" data-tab="saju">
-            <span class="smart-filter-slider"></span>
-          </label>
-          <span class="smart-filter-label">📊 통계 필터</span>
-        </div>
-
-        <button class="generate-btn saju-btn" id="btn-saju">
-          <span class="btn-icon">✨</span>
-          사주 번호 생성하기
-          <span class="btn-shimmer"></span>
-        </button>
-
-        <div class="result-area" id="result-saju">
-          <div class="balls-container" id="balls-saju"></div>
-          <div class="analysis-card" id="analysis-saju"></div>
-          <div class="explain-box" id="explain-saju" style="display:none">
-            <div class="explain-icon">💬</div>
-            <p class="explain-text"></p>
-          </div>
-          <div class="freq-chart" id="freq-saju"></div>
-        </div>
-
-        <div class="disclaimer">
-          ⚠️ 사주 기반 번호는 재미 목적이며, 당첨을 보장하지 않습니다.<br>
-          로또는 완전한 확률 게임입니다. 과도한 구매를 삼가세요.
         </div>
       </div>
 
@@ -640,34 +634,14 @@
           ☕ 개발자 커피 한잔 사주기
         </button>
         <div class="support-qr" id="supportQr" style="display:none">
-          <!-- 한국어 결제 수단 -->
-          <div class="support-ko" id="supportKo">
-            <p class="support-qr-title" data-i18n="support.qr_title">카카오페이로 송금해주세요!</p>
-            <a href="https://qr.kakaopay.com/FM5t5VmBF" target="_blank" rel="noopener" class="support-qr-link">
-              <img src="카카오톡 송금링크.png" alt="카카오페이 송금 QR" class="support-qr-img">
-            </a>
-            <p class="support-qr-name">관익</p>
-            <div class="support-pay-buttons">
-              <a href="https://qr.kakaopay.com/FM5t5VmBF" target="_blank" rel="noopener" class="support-pay-btn kakao-pay">
-                💳 카카오페이로 송금하기
-              </a>
-              <a href="https://toss.me/nick1148" target="_blank" rel="noopener" class="support-pay-btn toss-pay">
-                💙 토스로 송금하기
-              </a>
-            </div>
-          </div>
-          <!-- 영어 결제 수단 -->
-          <div class="support-en" id="supportEn" style="display:none">
-            <p class="support-qr-title">Support the Developer!</p>
-            <div class="support-pay-buttons">
-              <a href="https://buymeacoffee.com/nick1148" target="_blank" rel="noopener" class="support-pay-btn bmc-pay">
-                ☕ Buy Me a Coffee
-              </a>
-              <a href="https://paypal.me/nick1148" target="_blank" rel="noopener" class="support-pay-btn paypal-pay">
-                💳 PayPal
-              </a>
-            </div>
-          </div>
+          <p class="support-qr-title" data-i18n="support.qr_title">카카오페이로 송금해주세요!</p>
+          <a href="https://qr.kakaopay.com/FM5t5VmBF" target="_blank" rel="noopener" class="support-qr-link">
+            <img src="카카오톡 송금링크.png" alt="카카오페이 송금 QR" class="support-qr-img">
+          </a>
+          <p class="support-qr-name">관익</p>
+          <a href="https://qr.kakaopay.com/FM5t5VmBF" target="_blank" rel="noopener" class="support-pay-btn">
+            💳 카카오페이로 송금하기
+          </a>
           <button class="support-qr-close" id="supportQrClose" data-i18n="support.close">닫기</button>
         </div>
       </div>
@@ -737,6 +711,19 @@
     </div>
   </div>
 
+  <!-- 프리미엄 상세 해석 모달 -->
+  <div class="modal-overlay" id="premiumDetailModal" style="display:none">
+    <div class="modal-sheet modal-large premium-detail-sheet">
+      <div class="modal-close" id="premiumDetailClose">&times;</div>
+      <div class="premium-detail-header">
+        <div class="premium-badge">✨ PREMIUM</div>
+        <h2 class="premium-detail-title" id="premiumDetailTitle">사주 상세 해석</h2>
+      </div>
+      <div class="premium-detail-body" id="premiumDetailBody">
+      </div>
+    </div>
+  </div>
+
   <!-- 업적 모달 -->
   <div class="modal-overlay" id="achievementModal" style="display:none">
     <div class="modal-sheet modal-large">
@@ -744,6 +731,30 @@
       <h2 class="modal-title">🏆 업적</h2>
       <div class="achievement-stats" id="achievementStats"></div>
       <div class="achievement-list" id="achievementList"></div>
+    </div>
+  </div>
+
+  <!-- 로그인 모달 -->
+  <div class="modal-overlay" id="loginModal" style="display:none">
+    <div class="modal-sheet login-sheet">
+      <div class="modal-close" id="loginModalClose">&times;</div>
+      <div class="login-header">
+        <div class="login-icon">🔐</div>
+        <h2 class="login-title">로그인</h2>
+        <p class="login-desc">로그인하면 클로버와 데이터가<br>안전하게 보존됩니다</p>
+      </div>
+      <div class="login-benefits">
+        <div class="login-benefit-item">☁️ 기기 변경해도 데이터 유지</div>
+        <div class="login-benefit-item">🔒 결제한 클로버 안전 보관</div>
+        <div class="login-benefit-item">📱 어디서든 내 기록 접근</div>
+      </div>
+      <div class="login-buttons">
+        <button class="login-google-btn" id="loginGoogleBtn">
+          <svg viewBox="0 0 24 24" width="20" height="20"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Google로 로그인
+        </button>
+      </div>
+      <p class="login-skip" id="loginSkip">나중에 할게요</p>
     </div>
   </div>
 
@@ -776,6 +787,11 @@
   <!-- html2canvas (결과 이미지 저장용) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
 
+  <!-- Firebase SDK (compat — 프로젝트 설정 후 활성화) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
   <!-- i18n -->
   <script src="js/i18n.js"></script>
   <!-- 스크립트 -->
@@ -788,8 +804,9 @@
   <script src="js/explain.js"></script>
   <script src="js/lotto.js"></script>
   <script src="js/gamification.js"></script>
+  <script src="js/auth.js"></script>
   <script src="js/app.js"></script>
-  
+
   <!-- Kakao SDK -->
   <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js"></script>
 </body>

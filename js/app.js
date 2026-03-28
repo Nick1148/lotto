@@ -279,6 +279,16 @@ function initModals() {
     document.getElementById('checkinModal').style.display = 'none';
   });
 
+  // 프리미엄 상세 해석 모달 닫기
+  document.getElementById('premiumDetailClose')?.addEventListener('click', () => {
+    document.getElementById('premiumDetailModal').style.display = 'none';
+  });
+  document.getElementById('premiumDetailModal')?.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) {
+      e.currentTarget.style.display = 'none';
+    }
+  });
+
   // 프리미엄 모달
   document.getElementById('premiumClose')?.addEventListener('click', () => {
     document.getElementById('premiumModal').style.display = 'none';
@@ -536,6 +546,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  // Firebase Auth 초기화
+  if (typeof AuthSystem !== 'undefined') {
+    AuthSystem.init();
+  }
+
+  // 로그인 모달 이벤트
+  document.getElementById('loginModalClose')?.addEventListener('click', () => {
+    AuthSystem.hideLoginModal();
+  });
+  document.getElementById('loginSkip')?.addEventListener('click', () => {
+    AuthSystem.hideLoginModal();
+  });
+  document.getElementById('loginGoogleBtn')?.addEventListener('click', async () => {
+    const user = await AuthSystem.loginWithGoogle();
+    if (user) {
+      AuthSystem.hideLoginModal();
+      showToast(`${AuthSystem.getUserDisplayName()}님 환영해요! ☁️ 데이터가 안전하게 저장됩니다.`);
+    }
+  });
+  document.getElementById('loginModal')?.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) AuthSystem.hideLoginModal();
+  });
+
   // 클로버 충전소 모달
   initCloverShop();
 
@@ -654,9 +687,10 @@ function initButtons() {
     trackEvent('번호_생성', { method: '안나온' });
   });
 
-  document.getElementById('btn-saju').addEventListener('click', () => {
-    const dateVal = document.getElementById('birthDate').value;
-    const hourIdx = parseInt(document.getElementById('birthHour').value);
+  // 사주 히어로 버튼 (메인)
+  document.getElementById('btn-saju-hero').addEventListener('click', () => {
+    const dateVal = document.getElementById('heroBirthDate').value;
+    const hourIdx = parseInt(document.getElementById('heroBirthHour').value);
 
     if (!dateVal) {
       showToast('생년월일을 입력해주세요.');
@@ -665,10 +699,10 @@ function initButtons() {
 
     showLoadingSequence(getLoadingMessages().saju, () => {
       const [year, month, day] = dateVal.split('-').map(Number);
-      const filterOn = isSmartFilterOn('saju');
+      const filterOn = isSmartFilterOn('saju-hero');
       const result = LottoGenerator.smartFilter(LottoGenerator.generateSaju, [year, month, day, hourIdx], filterOn);
 
-      displayResult('saju', result.numbers, '✨ 내 사주', filterOn);
+      displayResult('saju-hero', result.numbers, '✨ 내 사주', filterOn);
       showSajuInfo(result.saju);
       showExplanation('saju', result);
       rewardGeneration('saju');
@@ -687,6 +721,12 @@ function initButtons() {
     // 🔥 이스터에그: 수진이
     if (name.includes('수진')) {
       triggerHellEasterEgg(name);
+      return;
+    }
+
+    // 🍀 이스터에그: 김다현
+    if (name.includes('다현') || name === '김다현') {
+      triggerDahyunEasterEgg(name);
       return;
     }
 
@@ -775,8 +815,8 @@ function initButtons() {
   // 당첨 비교 버튼
   document.getElementById('compareBtn').addEventListener('click', compareWithLatest);
 
-  document.getElementById('birthDate').addEventListener('change', updateSajuDisplay);
-  document.getElementById('birthHour').addEventListener('change', updateSajuDisplay);
+  document.getElementById('heroBirthDate').addEventListener('change', updateSajuDisplay);
+  document.getElementById('heroBirthHour').addEventListener('change', updateSajuDisplay);
 
   document.getElementById('clearHistory').addEventListener('click', () => {
     generationHistory = [];
@@ -802,21 +842,21 @@ function initHistoryToggle() {
  * 사주 정보 미리보기 업데이트
  */
 function updateSajuDisplay() {
-  const dateVal = document.getElementById('birthDate').value;
+  const dateVal = document.getElementById('heroBirthDate').value;
   if (!dateVal) return;
 
   const [year, month, day] = dateVal.split('-').map(Number);
-  const hourIdx = parseInt(document.getElementById('birthHour').value);
+  const hourIdx = parseInt(document.getElementById('heroBirthHour').value);
   const saju = SajuCalculator.calculate(year, month, day, hourIdx);
   showSajuInfo(saju);
 }
 
 /**
- * 사주 기둥 표시
+ * 사주 기둥 표시 (히어로 섹션)
  */
 function showSajuInfo(saju) {
-  const display = document.getElementById('sajuDisplay');
-  const pillarsEl = document.getElementById('sajuPillars');
+  const display = document.getElementById('heroSajuPillars');
+  const pillarsEl = document.getElementById('heroSajuPillarsInner');
 
   const pillars = [
     { label: '연주', pillar: saju.yearPillar },
@@ -1280,6 +1320,128 @@ function triggerHellEasterEgg(name) {
       showToast('🔥 이 페이지는 수진이 너를 위해 만들었어 🔥');
     }, 1000);
   }, 5500);
+}
+
+// ─── 🍀 김다현 이스터에그 (행복 꽃비) ──────────────────────
+function triggerDahyunEasterEgg(name) {
+  const overlay = document.createElement('div');
+  overlay.className = 'dahyun-overlay';
+  overlay.innerHTML = `
+    <div class="dahyun-particles"></div>
+    <div class="dahyun-glow-ring"></div>
+    <div class="dahyun-content">
+      <div class="dahyun-clover-big">🍀</div>
+      <div class="dahyun-title"></div>
+      <div class="dahyun-message"></div>
+      <div class="dahyun-bless"></div>
+      <div class="dahyun-clover-count"></div>
+    </div>
+    <div class="dahyun-ground-flowers"></div>
+  `;
+  document.body.appendChild(overlay);
+
+  // 꽃비 파티클 (네잎클로버 + 꽃 + 하트 + 별)
+  const particleContainer = overlay.querySelector('.dahyun-particles');
+  const flowerEmojis = ['🍀', '🌸', '🌼', '🌺', '💐', '🌷', '✨', '💖', '🦋', '🌻', '💫', '🍀', '🌸', '💛', '🍀'];
+  for (let i = 0; i < 80; i++) {
+    const p = document.createElement('span');
+    p.className = 'dahyun-petal';
+    p.textContent = flowerEmojis[i % flowerEmojis.length];
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDelay = (Math.random() * 6) + 's';
+    p.style.animationDuration = (3 + Math.random() * 4) + 's';
+    p.style.fontSize = (0.8 + Math.random() * 1.5) + 'rem';
+    p.style.opacity = 0.6 + Math.random() * 0.4;
+    particleContainer.appendChild(p);
+  }
+
+  // 바닥 꽃밭
+  const ground = overlay.querySelector('.dahyun-ground-flowers');
+  for (let i = 0; i < 40; i++) {
+    const f = document.createElement('span');
+    f.className = 'dahyun-ground-flower';
+    f.textContent = ['🍀', '🌱', '🌿', '☘️', '🍀'][i % 5];
+    f.style.left = Math.random() * 100 + '%';
+    f.style.animationDelay = (Math.random() * 2) + 's';
+    f.style.fontSize = (1 + Math.random() * 1) + 'rem';
+    ground.appendChild(f);
+  }
+
+  // 페이드인
+  requestAnimationFrame(() => {
+    overlay.classList.add('active');
+  });
+
+  const titleEl = overlay.querySelector('.dahyun-title');
+  const msgEl = overlay.querySelector('.dahyun-message');
+  const blessEl = overlay.querySelector('.dahyun-bless');
+  const countEl = overlay.querySelector('.dahyun-clover-count');
+  const bigClover = overlay.querySelector('.dahyun-clover-big');
+
+  // 1단계: 큰 클로버 등장
+  setTimeout(() => {
+    bigClover.classList.add('show');
+  }, 500);
+
+  // 2단계: 메인 타이틀
+  setTimeout(() => {
+    titleEl.innerHTML = '사이트 주인의 행복이<br>당신에게 가득할 것입니다';
+    titleEl.classList.add('show');
+  }, 1500);
+
+  // 3단계: 축복 메시지
+  setTimeout(() => {
+    msgEl.innerHTML = '당신은 평생 행복하고 모든 걱정이 사라질 거예요<br>좋은 일만 가득가득 넘쳐날 거예요<br><br>아파트에서 네잎클로버를 찾았던<br>그 행복이 영원히 함께할 거예요 🍀';
+    msgEl.classList.add('show');
+  }, 3500);
+
+  // 4단계: 축복
+  setTimeout(() => {
+    blessEl.innerHTML = '🌟 다현아, 세상에서 가장 행복해라 🌟';
+    blessEl.classList.add('show');
+  }, 6000);
+
+  // 5단계: 클로버 카운트 애니메이션
+  setTimeout(() => {
+    countEl.classList.add('show');
+    let count = 0;
+    const target = 9999999999;
+    const steps = 60;
+    const increment = Math.ceil(target / steps);
+    const counter = setInterval(() => {
+      count = Math.min(count + increment, target);
+      countEl.innerHTML = `🍀 ${count.toLocaleString()}개`;
+      if (count >= target) {
+        clearInterval(counter);
+        countEl.innerHTML = `🍀 9,999,999,999개<br><span class="dahyun-count-sub">무한한 행운이 함께합니다</span>`;
+        // 실제 클로버 지급
+        GameSystem.addClovers(9999999999, 'dahyun_blessing');
+        renderCloverBalance();
+      }
+    }, 30);
+  }, 7500);
+
+  // 6단계: 서서히 사라짐 + 번호 생성
+  setTimeout(() => {
+    overlay.classList.add('fade-out');
+    setTimeout(() => {
+      overlay.remove();
+
+      // 번호 생성
+      const filterOn = isSmartFilterOn('name');
+      const result = LottoGenerator.smartFilter(LottoGenerator.generateName, [name], filterOn);
+      displayResult('name', result.numbers, '🍀 행운의 번호', filterOn);
+      showNameInfo(result.nameInfo);
+      showExplanation('name', result);
+
+      // 행복 confetti
+      launchConfetti(['🍀', '🌸', '💖', '🌼', '✨', '🦋', '💛', '🌷']);
+      setTimeout(() => launchConfetti(['🍀', '💐', '🌻', '💫', '☘️', '🌺', '💖', '🍀']), 500);
+      setTimeout(() => launchConfetti(['🍀', '🌸', '✨', '💖', '🍀', '🌼', '💛', '🦋']), 1000);
+
+      showToast('🍀 세상 모든 행운이 다현에게 🍀');
+    }, 1500);
+  }, 11000);
 }
 
 // ─── 오늘의 운세 번호 ────────────────────────────────────
@@ -1880,21 +2042,14 @@ function insertSupportNudge(container) {
   const isEn = typeof I18n !== 'undefined' && I18n.getLang() === 'en';
   const msgs = isEn ? NUDGE_MESSAGES_EN : NUDGE_MESSAGES_KO;
   const msg = msgs[Math.floor(Math.random() * msgs.length)];
+  const linkText = isEn ? '☕ Buy the developer a coffee' : '☕ 개발자에게 커피 한잔';
 
   const nudge = document.createElement('div');
   nudge.className = 'result-support-nudge';
-
-  if (isEn) {
-    nudge.innerHTML = `
-      <span>${msg}</span>
-      <a href="https://buymeacoffee.com/nick1148" target="_blank" rel="noopener" class="nudge-link">☕ Buy me a coffee</a>
-    `;
-  } else {
-    nudge.innerHTML = `
-      <span>${msg}</span>
-      <a href="https://qr.kakaopay.com/FM5t5VmBF" target="_blank" rel="noopener" class="nudge-link">☕ 개발자에게 커피 한잔</a>
-    `;
-  }
+  nudge.innerHTML = `
+    <span>${msg}</span>
+    <a href="https://qr.kakaopay.com/FM5t5VmBF" target="_blank" rel="noopener" class="nudge-link">${linkText}</a>
+  `;
   container.appendChild(nudge);
 }
 
@@ -1974,8 +2129,6 @@ function showExplanation(type, result) {
   // 프리미엄 상세 해석 버튼 추가
   const existing = box.querySelector('.explain-premium-btn');
   if (existing) existing.remove();
-  const existingText = box.querySelector('.explain-premium-text');
-  if (existingText) existingText.remove();
 
   // 기능 키 매핑
   const featureKey = type === 'saju' ? 'sajuDetail' : type === 'name' ? 'nameDetail' : null;
@@ -1983,33 +2136,81 @@ function showExplanation(type, result) {
 
   const btn = document.createElement('button');
   btn.className = 'explain-premium-btn' + (isFreeAvailable ? ' free-trial' : '');
-  btn.textContent = isFreeAvailable ? '무료 체험 🆓' : '더 자세히 보기 🍀2';
+  btn.textContent = isFreeAvailable ? '✨ 무료 상세 해석 보기 🆓' : '✨ 더 자세히 보기 🍀2';
 
-  function showPremiumDetail() {
-    const detail = generatePremiumExplanation(type, result);
-    const p = document.createElement('div');
-    p.className = 'explain-premium-text';
-    p.innerHTML = detail;
-    box.appendChild(p);
-    btn.remove();
+  function openPremiumModal() {
+    showPremiumDetailModal(type, result);
   }
 
   btn.addEventListener('click', () => {
     if (isFreeAvailable) {
       GameSystem.useFreePremium(featureKey);
-      showPremiumDetail();
+      openPremiumModal();
       showToast('첫 체험이에요! 다음부터는 🍀2가 필요해요');
     } else if (GameSystem.canAfford(2)) {
       GameSystem.spendClovers(2, 'detail_explain');
       renderCloverBalance();
-      showPremiumDetail();
+      openPremiumModal();
     } else {
       showPremiumModal('상세 해석', 2, () => {
-        showPremiumDetail();
+        openPremiumModal();
       });
     }
   });
   box.appendChild(btn);
+}
+
+// ─── 프리미엄 상세 해석 모달 ────────────────────────────────
+function showPremiumDetailModal(type, result) {
+  const modal = document.getElementById('premiumDetailModal');
+  const title = document.getElementById('premiumDetailTitle');
+  const body = document.getElementById('premiumDetailBody');
+
+  const titles = { saju: '✨ 사주 상세 해석', name: '📛 이름 상세 해석', mbti: '🧠 MBTI 상세 해석' };
+  title.textContent = titles[type] || '상세 해석';
+
+  body.innerHTML = generatePremiumCards(type, result);
+  modal.style.display = 'flex';
+}
+
+function generatePremiumCards(type, result) {
+  const raw = generatePremiumExplanation(type, result);
+  if (!raw) return '<p>해석 데이터를 불러올 수 없습니다.</p>';
+
+  // ◆ 섹션 기준으로 분리하여 카드화
+  const sections = raw.split(/<span class="premium-section-title">◆\s*/);
+  const icons = { '일간': '🌿', '오행 분포': '🔥', '음양': '☯', '오행 관계': '⚡', '지지': '🌀', '번호별': '🔢', '오늘의': '🍀', '성명학': '📝', '획수': '✏️', '번호 분석': '📊', 'MBTI': '🧠' };
+
+  let html = '';
+  sections.forEach((sec, i) => {
+    if (i === 0 && !sec.trim()) return; // 첫 빈 섹션 스킵
+    // 제목과 본문 분리
+    const endTag = sec.indexOf('</span>');
+    let sectionTitle = '';
+    let sectionBody = sec;
+    if (endTag > -1) {
+      sectionTitle = sec.substring(0, endTag).trim();
+      sectionBody = sec.substring(endTag + 7).trim();
+    } else if (i > 0) {
+      // </span> 없이 첫 줄이 제목
+      const lines = sec.split('\n');
+      sectionTitle = lines[0].trim();
+      sectionBody = lines.slice(1).join('\n').trim();
+    }
+
+    // 아이콘 매칭
+    let icon = '✨';
+    for (const [key, emoji] of Object.entries(icons)) {
+      if (sectionTitle.includes(key)) { icon = emoji; break; }
+    }
+
+    html += `<div class="premium-section-card">
+      <h3><span class="card-icon">${icon}</span> ${sectionTitle}</h3>
+      <p>${sectionBody}</p>
+    </div>`;
+  });
+
+  return html || `<div class="premium-section-card"><p>${raw}</p></div>`;
 }
 
 function generatePremiumExplanation(type, result) {
@@ -2122,13 +2323,9 @@ function generatePremiumExplanation(type, result) {
   return '';
 }
 
-// ─── 언어별 결제 수단 표시 ───────────────────────────────
+// ─── 결제 수단 표시 (현재 카카오페이만) ─────────────────
 function updateSupportPayment() {
-  const isEn = typeof I18n !== 'undefined' && I18n.getLang() === 'en';
-  const koSection = document.getElementById('supportKo');
-  const enSection = document.getElementById('supportEn');
-  if (koSection) koSection.style.display = isEn ? 'none' : 'block';
-  if (enSection) enSection.style.display = isEn ? 'block' : 'none';
+  // 향후 Toss/BMC/PayPal 추가 시 언어별 분기 로직 여기에
 }
 
 // ─── 클로버 충전소 ──────────────────────────────────────
@@ -2170,36 +2367,32 @@ function updateTierSelection() {
 }
 
 function initCloverShop() {
-  // 티어 선택
+  // 티어 선택 → 로그인 필수 → 결제 링크
   document.querySelectorAll('.clover-tier').forEach(el => {
     el.addEventListener('click', () => {
       selectedCloverTier = el.dataset.tier;
       updateTierSelection();
 
-      // 결제 링크 열기
-      const isEn = typeof I18n !== 'undefined' && I18n.getLang() === 'en';
-      if (isEn) {
-        window.open('https://buymeacoffee.com/nick1148', '_blank');
+      // 결제 전 로그인 필수 (데이터 보존)
+      if (typeof AuthSystem !== 'undefined' && AuthSystem.isAvailable()) {
+        AuthSystem.requireLogin(() => {
+          window.open('https://qr.kakaopay.com/FM5t5VmBF', '_blank');
+        });
       } else {
         window.open('https://qr.kakaopay.com/FM5t5VmBF', '_blank');
       }
     });
   });
 
-  // claim 버튼
+  // claim 버튼 → 로그인 확인 후 지급
   document.getElementById('cloverClaimBtn')?.addEventListener('click', () => {
-    const result = GameSystem.claimCloverPurchase(selectedCloverTier);
-    if (result.success) {
-      renderCloverBalance();
-      renderLevelBar();
-      pulseClover();
-      const isEn = typeof I18n !== 'undefined' && I18n.getLang() === 'en';
-      showToast(isEn ? `🍀 +${result.amount} Clovers added!` : `🍀 +${result.amount} 클로버가 충전되었어요!`);
-      document.getElementById('cloverShopModal').style.display = 'none';
-    } else if (result.reason === 'already_claimed') {
-      const isEn = typeof I18n !== 'undefined' && I18n.getLang() === 'en';
-      showToast(isEn ? 'Already claimed today! Come back tomorrow.' : '오늘 이미 충전했어요!');
+    if (typeof AuthSystem !== 'undefined' && AuthSystem.isAvailable() && !AuthSystem.isLoggedIn()) {
+      AuthSystem.requireLogin(() => {
+        processCloverClaim();
+      });
+      return;
     }
+    processCloverClaim();
   });
 
   // 닫기 버튼
@@ -2213,6 +2406,21 @@ function initCloverShop() {
       document.getElementById('cloverShopModal').style.display = 'none';
     }
   });
+}
+
+function processCloverClaim() {
+  const result = GameSystem.claimCloverPurchase(selectedCloverTier);
+  if (result.success) {
+    renderCloverBalance();
+    renderLevelBar();
+    pulseClover();
+    const isEn = typeof I18n !== 'undefined' && I18n.getLang() === 'en';
+    showToast(isEn ? `🍀 +${result.amount} Clovers added!` : `🍀 +${result.amount} 클로버가 충전되었어요!`);
+    document.getElementById('cloverShopModal').style.display = 'none';
+  } else if (result.reason === 'already_claimed') {
+    const isEn = typeof I18n !== 'undefined' && I18n.getLang() === 'en';
+    showToast(isEn ? 'Already claimed today! Come back tomorrow.' : '오늘 이미 충전했어요!');
+  }
 }
 
 // ─── 유틸 ─────────────────────────────────────────────────
