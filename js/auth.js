@@ -4,14 +4,13 @@
  */
 
 const AuthSystem = (() => {
-  // ⚠️ Firebase 콘솔에서 프로젝트 생성 후 여기에 실제 값을 넣으세요
   const FIREBASE_CONFIG = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyDeL-uryyLr2mCDhhKBY-hLL6Dqbo-g5ag",
+    authDomain: "saju-ai-app-2026-a2a85.firebaseapp.com",
+    projectId: "saju-ai-app-2026-a2a85",
+    storageBucket: "saju-ai-app-2026-a2a85.firebasestorage.app",
+    messagingSenderId: "237157731331",
+    appId: "1:237157731331:web:8ed2077247e03dca43d236"
   };
 
   let currentUser = null;
