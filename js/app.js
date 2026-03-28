@@ -2,6 +2,13 @@
  * app.js - UI 이벤트 핸들러, 캐릭터 상태, confetti, localStorage
  */
 
+// ─── GA4 이벤트 추적 헬퍼 ───────────────────────────────────
+function trackEvent(eventName, params = {}) {
+  if (typeof gtag !== 'undefined') {
+    gtag('event', eventName, params);
+  }
+}
+
 // 생성 기록 (최대 20개)
 let generationHistory = [];
 
@@ -32,6 +39,427 @@ const IDLE_MESSAGES = [
 // ─── localStorage 키 ──────────────────────────────────────
 const STORAGE_KEY = 'lotto_history';
 
+// ─── 게이미피케이션 UI 헬퍼 ─────────────────────────────
+let pendingPremiumCallback = null;
+
+function renderCloverBalance() {
+  const el = document.getElementById('cloverCount');
+  if (el) el.textContent = GameSystem.getBalance();
+}
+
+function pulseClover() {
+  const display = document.getElementById('cloverDisplay');
+  if (display) {
+    display.classList.remove('pulse');
+    void display.offsetWidth;
+    display.classList.add('pulse');
+  }
+}
+
+function renderLevelBar() {
+  const level = GameSystem.getLevel();
+  const badge = document.getElementById('levelBadge');
+  const fill = document.getElementById('levelProgressFill');
+  if (badge) badge.textContent = `${level.emoji} ${level.name}`;
+  if (fill) fill.style.width = `${Math.round(level.progress * 100)}%`;
+}
+
+function showAchievementToast(achievement) {
+  if (!achievement) return;
+  const toast = document.getElementById('achievementToast');
+  if (!toast) return;
+  toast.querySelector('.achievement-toast-icon').textContent = achievement.icon;
+  toast.querySelector('.achievement-toast-text').textContent = `업적 달성! ${achievement.name} (+${achievement.reward}🍀)`;
+  toast.style.display = 'flex';
+  requestAnimationFrame(() => toast.classList.add('show'));
+  setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.style.display = 'none', 400); }, 3000);
+}
+
+function rewardShare(channel) {
+  const missionBefore = GameSystem.getDailyMission();
+  const missionWasDone = missionBefore && missionBefore.done;
+
+  const result = GameSystem.recordShare(channel);
+  if (result.rewarded) {
+    renderCloverBalance();
+    renderLevelBar();
+    pulseClover();
+    showToast(`🍀 공유 완료! +${result.amount} 클로버`);
+  } else if (result.maxed) {
+    showToast('오늘 공유 보상 횟수를 다 사용했어요!');
+  }
+
+  // 데일리 미션 완료 체크
+  const missionAfter = GameSystem.getDailyMission();
+  if (missionAfter && missionAfter.done && !missionWasDone) {
+    const bar = document.getElementById('dailyMissionBar');
+    if (bar) bar.classList.add('done');
+    renderCloverBalance();
+    showToast('🎯 오늘의 미션 완료! +1🍀');
+  }
+}
+
+// ─── 로딩 연출 시스템 ────────────────────────────────────
+let loadingActive = false;
+
+function showLoadingSequence(messages, callback) {
+  if (loadingActive) return;
+  loadingActive = true;
+  const overlay = document.getElementById('loadingOverlay');
+  const msgEl = document.getElementById('loadingMessage');
+  const fillEl = document.getElementById('loadingProgressFill');
+  if (!overlay) { loadingActive = false; callback(); return; }
+
+  overlay.style.display = 'flex';
+  fillEl.style.width = '0%';
+  let step = 0;
+  const total = messages.length;
+
+  function nextStep() {
+    if (step < total) {
+      msgEl.textContent = messages[step];
+      fillEl.style.width = Math.round(((step + 1) / total) * 100) + '%';
+      step++;
+      setTimeout(nextStep, 800 + Math.random() * 400);
+    } else {
+      msgEl.textContent = '분석 완료!';
+      fillEl.style.width = '100%';
+      setTimeout(() => {
+        overlay.style.display = 'none';
+        loadingActive = false;
+        callback();
+      }, 400);
+    }
+  }
+  nextStep();
+}
+
+const LOADING_MESSAGES_KO = {
+  saju: [
+    '📜 사주 명식(命式)을 세우고 있어요...',
+    '🔮 천간(天干)과 지지(地支)를 배열하는 중...',
+    '☯️ 오행의 상생·상극 관계를 분석 중...',
+    '🌟 삼합·육합·충을 살펴보는 중...',
+    '🎯 행운 번호를 계산하고 있어요...'
+  ],
+  chemistry: [
+    '📝 두 사람의 이름을 분석 중...',
+    '🔥 오행(五行) 궁합을 계산하고 있어요...',
+    '☯️ 상생·상극 관계를 확인하는 중...',
+    '💫 궁합 에너지를 종합하는 중...',
+    '🎯 공동 행운 번호를 만들고 있어요...'
+  ],
+  name: [
+    '✍️ 이름의 획수를 하나씩 세는 중...',
+    '🔮 성명학 오행 분석 중...',
+    '📊 수리 에너지를 계산하는 중...',
+    '🎯 행운 번호를 생성하고 있어요...'
+  ]
+};
+const LOADING_MESSAGES_EN = {
+  saju: [
+    '📜 Building your Four Pillars of Destiny...',
+    '🔮 Analyzing Heavenly Stems & Earthly Branches...',
+    '☯️ Checking Five Elements harmony...',
+    '🌟 Detecting special astrological connections...',
+    '🎯 Calculating your lucky numbers...'
+  ],
+  chemistry: [
+    '📝 Analyzing both names...',
+    '🔥 Calculating Five Elements compatibility...',
+    '☯️ Checking harmony & tension...',
+    '💫 Combining compatibility energy...',
+    '🎯 Generating shared lucky numbers...'
+  ],
+  name: [
+    '✍️ Analyzing name numerology...',
+    '🔮 Calculating Five Elements energy...',
+    '📊 Processing numeric vibrations...',
+    '🎯 Generating lucky numbers...'
+  ]
+};
+function getLoadingMessages() {
+  return (typeof I18n !== 'undefined' && I18n.getLang() === 'en') ? LOADING_MESSAGES_EN : LOADING_MESSAGES_KO;
+}
+
+function checkNewAchievements() {
+  const all = GameSystem.getAchievements();
+  // 업적 달성 토스트는 checkAchievementSilent에서 이미 저장됨
+  // 여기서는 UI만 새로고침
+  renderCloverBalance();
+  renderLevelBar();
+}
+
+function rewardGeneration(method) {
+  const missionBefore = GameSystem.getDailyMission();
+  const missionWasDone = missionBefore && missionBefore.done;
+
+  const result = GameSystem.recordGeneration(method);
+
+  // 클로버/레벨 항상 동기화
+  renderCloverBalance();
+  renderLevelBar();
+
+  if (result.rewarded) {
+    pulseClover();
+    showToast(`🍀 +${result.amount} 클로버`);
+  }
+
+  // 데일리 미션 완료 체크
+  const missionAfter = GameSystem.getDailyMission();
+  if (missionAfter && missionAfter.done && !missionWasDone) {
+    const bar = document.getElementById('dailyMissionBar');
+    if (bar) bar.classList.add('done');
+    pulseClover();
+    showToast('🎯 오늘의 미션 완료! +1🍀');
+    renderCloverBalance();
+  }
+}
+
+function showCheckinModal(result) {
+  const modal = document.getElementById('checkinModal');
+  if (!modal) return;
+
+  document.getElementById('checkinTitle').textContent = result.isFirst ? '어서오세요! 반가워요!' : '오늘도 왔네!';
+  document.getElementById('checkinReward').textContent = `🍀 +${result.amount} 클로버`;
+  document.getElementById('checkinStreak').textContent = `🔥 ${result.streak}일 연속 출석!`;
+  document.getElementById('checkinBonus').textContent = result.bonusMsg || '';
+
+  // 캘린더
+  const calendar = document.getElementById('checkinCalendar');
+  const days = GameSystem.getCheckInCalendar();
+  calendar.innerHTML = days.map(d => `
+    <div class="checkin-day">
+      <span>${d.day}</span>
+      <div class="checkin-day-circle ${d.checkedIn ? 'checked' : ''} ${d.date === new Date().toISOString().slice(0,10) ? 'today' : ''}">
+        ${d.checkedIn ? '✓' : d.dateNum}
+      </div>
+    </div>
+  `).join('');
+
+  // 다음 마일스톤
+  const streak = result.streak;
+  let nextMilestone = '';
+  if (streak < 3) nextMilestone = `3일 연속까지 ${3 - streak}일!`;
+  else if (streak < 7) nextMilestone = `7일 연속까지 ${7 - streak}일!`;
+  else if (streak < 14) nextMilestone = `14일 연속까지 ${14 - streak}일!`;
+  else if (streak < 30) nextMilestone = `30일 연속까지 ${30 - streak}일!`;
+  else nextMilestone = '전설적인 스트릭!';
+  document.getElementById('checkinNext').textContent = nextMilestone;
+
+  modal.style.display = 'flex';
+}
+
+function showPremiumModal(title, cost, onSpend) {
+  const modal = document.getElementById('premiumModal');
+  if (!modal) return;
+
+  document.getElementById('premiumTitle').textContent = title;
+  document.getElementById('premiumCostDisplay').textContent = `🍀 ${cost} 클로버가 필요해요!`;
+  document.getElementById('premiumBalance').textContent = `현재 🍀 ${GameSystem.getBalance()} 클로버`;
+
+  const spendBtn = document.getElementById('premiumSpend');
+  if (GameSystem.canAfford(cost)) {
+    spendBtn.style.display = 'block';
+    spendBtn.textContent = `🍀 ${cost} 클로버 사용하기`;
+  } else {
+    spendBtn.style.display = 'none';
+  }
+
+  pendingPremiumCallback = { cost, onSpend };
+  modal.style.display = 'flex';
+}
+
+function initModals() {
+  // 출석 모달 닫기
+  document.getElementById('checkinClose')?.addEventListener('click', () => {
+    document.getElementById('checkinModal').style.display = 'none';
+  });
+  document.getElementById('checkinConfirm')?.addEventListener('click', () => {
+    document.getElementById('checkinModal').style.display = 'none';
+  });
+
+  // 프리미엄 모달
+  document.getElementById('premiumClose')?.addEventListener('click', () => {
+    document.getElementById('premiumModal').style.display = 'none';
+    pendingPremiumCallback = null;
+  });
+
+  document.getElementById('premiumSpend')?.addEventListener('click', () => {
+    if (pendingPremiumCallback && GameSystem.spendClovers(pendingPremiumCallback.cost, 'premium')) {
+      document.getElementById('premiumModal').style.display = 'none';
+      renderCloverBalance();
+      renderLevelBar();
+      if (pendingPremiumCallback.onSpend) pendingPremiumCallback.onSpend();
+      pendingPremiumCallback = null;
+    }
+  });
+
+  document.getElementById('premiumKakao')?.addEventListener('click', () => {
+    if (typeof Kakao !== 'undefined' && Kakao.isInitialized()) {
+      Kakao.Share.sendDefault({
+        objectType: 'feed',
+        content: {
+          title: '🍀 로또 번호 예상기',
+          description: '사주·이름·MBTI·통계 기반 행운 번호 추천! 무료로 뽑아보세요.',
+          imageUrl: 'https://nick1148.site/og-image.png',
+          link: { mobileWebUrl: 'https://nick1148.site', webUrl: 'https://nick1148.site' },
+        },
+        buttons: [{ title: '나도 번호 뽑기', link: { mobileWebUrl: 'https://nick1148.site', webUrl: 'https://nick1148.site' } }],
+      }).then(() => {
+        rewardShare('kakao');
+        document.getElementById('premiumBalance').textContent = `현재 🍀 ${GameSystem.getBalance()} 클로버`;
+        const spendBtn = document.getElementById('premiumSpend');
+        if (pendingPremiumCallback && GameSystem.canAfford(pendingPremiumCallback.cost)) {
+          spendBtn.style.display = 'block';
+          spendBtn.textContent = `🍀 ${pendingPremiumCallback.cost} 클로버 사용하기`;
+        }
+      });
+    } else {
+      showToast('카카오톡 공유를 사용할 수 없습니다.');
+    }
+  });
+
+  document.getElementById('premiumCopy')?.addEventListener('click', () => {
+    const shareText = '🍀 로또 번호 예상기 - 사주·이름·MBTI로 행운번호 추천!\n👉 https://nick1148.site';
+    navigator.clipboard.writeText(shareText).then(() => {
+      rewardShare('copy');
+      document.getElementById('premiumBalance').textContent = `현재 🍀 ${GameSystem.getBalance()} 클로버`;
+      const spendBtn = document.getElementById('premiumSpend');
+      if (pendingPremiumCallback && GameSystem.canAfford(pendingPremiumCallback.cost)) {
+        spendBtn.style.display = 'block';
+        spendBtn.textContent = `🍀 ${pendingPremiumCallback.cost} 클로버 사용하기`;
+      }
+    }).catch(() => showToast('복사에 실패했습니다.'));
+  });
+
+  // 업적 모달
+  document.getElementById('trophyBtn')?.addEventListener('click', showAchievementModal);
+  document.getElementById('achievementClose')?.addEventListener('click', () => {
+    document.getElementById('achievementModal').style.display = 'none';
+  });
+
+  // MBTI 랭킹 모달
+  document.getElementById('rankingMoreBtn')?.addEventListener('click', showMbtiRankingModal);
+  document.getElementById('mbtiRankingClose')?.addEventListener('click', () => {
+    document.getElementById('mbtiRankingModal').style.display = 'none';
+  });
+
+  // 오버레이 클릭으로 닫기
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        overlay.style.display = 'none';
+        pendingPremiumCallback = null;
+      }
+    });
+  });
+}
+
+function showAchievementModal() {
+  const modal = document.getElementById('achievementModal');
+  const stats = GameSystem.getStats();
+  const achievements = GameSystem.getAchievements();
+
+  document.getElementById('achievementStats').innerHTML = `
+    <span>🍀 <strong>${stats.totalEarned}</strong> 획득</span>
+    <span>🏆 <strong>${GameSystem.getUnlockedCount()}</strong>/${achievements.length}</span>
+    <span>🔥 <strong>${stats.longestStreak}</strong>일 최장</span>
+  `;
+
+  document.getElementById('achievementList').innerHTML = achievements.map(a => `
+    <div class="achievement-item ${a.unlocked ? 'unlocked' : 'locked'}">
+      <span class="achievement-icon">${a.icon}</span>
+      <div class="achievement-info">
+        <div class="achievement-name">${a.name}</div>
+        <div class="achievement-desc">${a.desc}</div>
+      </div>
+      <span class="achievement-reward">${a.unlocked ? '✅' : `+${a.reward}🍀`}</span>
+    </div>
+  `).join('');
+
+  modal.style.display = 'flex';
+}
+
+function initDailyMission() {
+  const mission = GameSystem.getDailyMission();
+  const bar = document.getElementById('dailyMissionBar');
+  if (!mission || !bar) return;
+
+  document.getElementById('dailyMissionText').textContent = mission.text;
+  if (mission.done) bar.classList.add('done');
+  bar.style.display = 'flex';
+}
+
+function initMbtiRanking() {
+  const banner = document.getElementById('mbtiRankingBanner');
+  const top3El = document.getElementById('rankingTop3');
+  if (!banner || !top3El) return;
+
+  const ranking = GameSystem.getMbtiRanking();
+  const medals = ['🥇', '🥈', '🥉'];
+  top3El.innerHTML = ranking.slice(0, 3).map((r, i) => `
+    <div class="rank-item">
+      <span class="rank-medal">${medals[i]}</span>
+      <span class="rank-type">${r.type}</span>
+    </div>
+  `).join('');
+
+  banner.style.display = 'block';
+}
+
+function showMbtiRankingModal() {
+  const ranking = GameSystem.getMbtiRanking();
+  const medals = ['🥇', '🥈', '🥉'];
+  document.getElementById('mbtiRankingList').innerHTML = ranking.map((r, i) => `
+    <div class="mbti-rank-item">
+      <span class="mbti-rank-num">${i < 3 ? medals[i] : (i + 1)}</span>
+      <span>${r.type}</span>
+    </div>
+  `).join('');
+  document.getElementById('mbtiRankingModal').style.display = 'flex';
+}
+
+function renderLockedNumbers() {
+  const locked = GameSystem.getLockedNumbers();
+  const section = document.getElementById('lockedSection');
+  const list = document.getElementById('lockedList');
+  if (!section || !list) return;
+
+  if (locked.length === 0) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  list.innerHTML = locked.map(item => `
+    <div class="locked-item">
+      <div class="locked-item-balls">
+        ${item.numbers.map(n => `<div class="ball ball-sm ${getBallColorClass(n)}">${n}</div>`).join('')}
+      </div>
+      <span class="locked-item-date">${item.date}</span>
+      <button class="locked-item-remove" data-id="${item.id}" title="삭제">🗑️</button>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('.locked-item-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      GameSystem.unlockNumbers(parseInt(btn.dataset.id));
+      renderLockedNumbers();
+    });
+  });
+}
+
+function handleDeepLink() {
+  const params = new URLSearchParams(window.location.search);
+  const chemName = params.get('chem');
+  if (chemName) {
+    // 궁합 탭으로 이동, 이름1 자동입력
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelector('.tab-btn[data-tab="chemistry"]')?.classList.add('active');
+    document.getElementById('tab-chemistry')?.classList.add('active');
+    document.getElementById('chemName1').value = chemName;
+    showToast(`${chemName}님이 궁합을 보내왔어요!`);
+  }
+}
+
 // ─── 초기화 ───────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
   // Kakao SDK 초기화 (사용자 앱 키 필요)
@@ -39,6 +467,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     Kakao.init('3fe6822c969a8fe0db7f40bf57a5758c');
     Kakao.isInitialized();
   }
+
+  // 게이미피케이션 시스템 초기화
+  GameSystem.load();
+  renderCloverBalance();
+  renderLevelBar();
 
   await initData();
   initTabs();
@@ -48,22 +481,69 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderHistory();
   updateSajuDisplay();
   initHistoryToggle();
+  initModals();
+  initDailyMission();
+  initMbtiRanking();
+  renderLockedNumbers();
+  handleDeepLink();
 
   // 오늘의 운세 번호 초기화
   initDailyFortune();
 
-  // 후원 QR 토글
+  // 출석 체크
+  const checkinResult = GameSystem.checkIn();
+  if (checkinResult.rewarded) {
+    renderCloverBalance();
+    renderLevelBar();
+    setTimeout(() => showCheckinModal(checkinResult), 800);
+  }
+  if (GameSystem.isFirstVisit()) {
+    GameSystem.markNotFirstVisit();
+  }
+
+  // 후원 QR 토글 + 언어별 결제 수단 분기
   const supportBtn = document.getElementById('supportBtn');
   const supportQr = document.getElementById('supportQr');
   const supportQrClose = document.getElementById('supportQrClose');
   if (supportBtn && supportQr) {
     supportBtn.addEventListener('click', () => {
-      supportQr.style.display = supportQr.style.display === 'none' ? 'block' : 'none';
+      const isOpen = supportQr.style.display !== 'none';
+      supportQr.style.display = isOpen ? 'none' : 'block';
+      if (!isOpen) updateSupportPayment();
+      trackEvent('후원_클릭');
     });
-    supportQrClose.addEventListener('click', () => {
+    supportQrClose?.addEventListener('click', () => {
       supportQr.style.display = 'none';
     });
   }
+
+  // 언어 전환 버튼
+  const langBtn = document.getElementById('langSwitchBtn');
+  if (langBtn) {
+    langBtn.addEventListener('click', () => {
+      if (typeof I18n === 'undefined') return;
+      const next = I18n.getLang() === 'ko' ? 'en' : 'ko';
+      I18n.switchLang(next);
+      updateSupportPayment();
+      showToast(next === 'en' ? 'Switched to English 🌐' : '한국어로 전환했어요 🌐');
+    });
+  }
+
+  // i18n 초기화
+  if (typeof I18n !== 'undefined') {
+    I18n.init().then(() => {
+      updateSupportPayment();
+    });
+  }
+
+  // 클로버 충전소 모달
+  initCloverShop();
+
+  // 프리미엄 게이트 → 클로버 충전 연결
+  document.getElementById('premiumBuyClovers')?.addEventListener('click', () => {
+    document.getElementById('premiumModal').style.display = 'none';
+    showCloverShop();
+  });
 
   // 캐릭터 초기 상태
   setCharacterState('idle');
@@ -143,6 +623,7 @@ function initTabs() {
 
       btn.classList.add('active');
       document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+      trackEvent('탭_변경', { tab: btn.dataset.tab });
     });
   });
 }
@@ -153,18 +634,24 @@ function initButtons() {
     const filterOn = isSmartFilterOn('random');
     const numbers = LottoGenerator.smartFilter(LottoGenerator.generateRandom, [], filterOn);
     displayResult('random', numbers, '🎲 완전 랜덤', filterOn);
+    rewardGeneration('random');
+    trackEvent('번호_생성', { method: '완전랜덤' });
   });
 
   document.getElementById('btn-frequent').addEventListener('click', () => {
     const filterOn = isSmartFilterOn('frequent');
     const numbers = LottoGenerator.smartFilter(LottoGenerator.generateFrequent, [], filterOn);
     displayResult('frequent', numbers, '🔥 자주 나온', filterOn);
+    rewardGeneration('frequent');
+    trackEvent('번호_생성', { method: '자주나온' });
   });
 
   document.getElementById('btn-rare').addEventListener('click', () => {
     const filterOn = isSmartFilterOn('rare');
     const numbers = LottoGenerator.smartFilter(LottoGenerator.generateRare, [], filterOn);
     displayResult('rare', numbers, '❄️ 안 나온', filterOn);
+    rewardGeneration('rare');
+    trackEvent('번호_생성', { method: '안나온' });
   });
 
   document.getElementById('btn-saju').addEventListener('click', () => {
@@ -176,13 +663,17 @@ function initButtons() {
       return;
     }
 
-    const [year, month, day] = dateVal.split('-').map(Number);
-    const filterOn = isSmartFilterOn('saju');
-    const result = LottoGenerator.smartFilter(LottoGenerator.generateSaju, [year, month, day, hourIdx], filterOn);
+    showLoadingSequence(getLoadingMessages().saju, () => {
+      const [year, month, day] = dateVal.split('-').map(Number);
+      const filterOn = isSmartFilterOn('saju');
+      const result = LottoGenerator.smartFilter(LottoGenerator.generateSaju, [year, month, day, hourIdx], filterOn);
 
-    displayResult('saju', result.numbers, '✨ 내 사주', filterOn);
-    showSajuInfo(result.saju);
-    showExplanation('saju', result);
+      displayResult('saju', result.numbers, '✨ 내 사주', filterOn);
+      showSajuInfo(result.saju);
+      showExplanation('saju', result);
+      rewardGeneration('saju');
+      trackEvent('번호_생성', { method: '사주' });
+    });
   });
 
   // 이름 버튼
@@ -199,11 +690,15 @@ function initButtons() {
       return;
     }
 
-    const filterOn = isSmartFilterOn('name');
-    const result = LottoGenerator.smartFilter(LottoGenerator.generateName, [name], filterOn);
-    displayResult('name', result.numbers, '📛 이름', filterOn);
-    showNameInfo(result.nameInfo);
-    showExplanation('name', result);
+    showLoadingSequence(getLoadingMessages().name, () => {
+      const filterOn = isSmartFilterOn('name');
+      const result = LottoGenerator.smartFilter(LottoGenerator.generateName, [name], filterOn);
+      displayResult('name', result.numbers, '📛 이름', filterOn);
+      showNameInfo(result.nameInfo);
+      showExplanation('name', result);
+      rewardGeneration('name');
+      trackEvent('번호_생성', { method: '이름' });
+    });
   });
 
   // MBTI 버튼
@@ -214,20 +709,52 @@ function initButtons() {
 
     displayResult('mbti', result.numbers, '🧠 MBTI', filterOn);
     showExplanation('mbti', result);
+    rewardGeneration('mbti');
+    GameSystem.recordMbtiType(mbtiType);
+    trackEvent('번호_생성', { method: 'MBTI', mbti_type: mbtiType });
   });
 
   // 5세트 뽑기 버튼
   document.getElementById('btn-random-multi').addEventListener('click', () => {
     const sets = generateMultiSets('random');
     displayMultiSets('random', sets, '🎲 완전 랜덤');
+    rewardGeneration('random');
+    trackEvent('번호_생성', { method: '5세트_랜덤' });
   });
   document.getElementById('btn-frequent-multi').addEventListener('click', () => {
     const sets = generateMultiSets('frequent');
     displayMultiSets('frequent', sets, '🔥 자주 나온');
+    rewardGeneration('frequent');
+    trackEvent('번호_생성', { method: '5세트_자주나온' });
   });
   document.getElementById('btn-rare-multi').addEventListener('click', () => {
     const sets = generateMultiSets('rare');
     displayMultiSets('rare', sets, '❄️ 안 나온');
+    rewardGeneration('rare');
+    trackEvent('번호_생성', { method: '5세트_안나온' });
+  });
+
+  // 10세트 프리미엄 뽑기 버튼
+  ['random', 'frequent', 'rare'].forEach(tabId => {
+    const btn = document.getElementById(`btn-${tabId}-multi10`);
+    if (btn) {
+      btn.addEventListener('click', () => {
+        if (GameSystem.canAfford(3)) {
+          GameSystem.spendClovers(3, '10set_' + tabId);
+          renderCloverBalance();
+          const sets = generateMultiSets10(tabId);
+          displayMultiSets(tabId, sets, getMethodEmoji(tabId));
+          rewardGeneration(tabId);
+          trackEvent('번호_생성', { method: '10세트_' + tabId });
+        } else {
+          showPremiumModal('10세트 뽑기', 3, () => {
+            const sets = generateMultiSets10(tabId);
+            displayMultiSets(tabId, sets, getMethodEmoji(tabId));
+            rewardGeneration(tabId);
+          });
+        }
+      });
+    }
   });
 
   // 궁합 버튼
@@ -237,8 +764,12 @@ function initButtons() {
     if (!name1 || name1.length < 2) { showToast('나의 이름을 2자 이상 입력해주세요.'); return; }
     if (!name2 || name2.length < 2) { showToast('상대 이름을 2자 이상 입력해주세요.'); return; }
 
-    const result = ChemistryGenerator.getChemistry(name1, name2);
-    displayChemistryResult(result);
+    showLoadingSequence(getLoadingMessages().chemistry, () => {
+      const result = ChemistryGenerator.getChemistry(name1, name2);
+      displayChemistryResult(result);
+      rewardGeneration('chemistry');
+      trackEvent('번호_생성', { method: '궁합' });
+    });
   });
 
   // 당첨 비교 버튼
@@ -351,6 +882,7 @@ function displayResult(tabId, numbers, methodName, filtered = false) {
     renderFreqChart(freqContainer, numbers);
     renderAnalysisCard(tabId, numbers, filtered);
     createShareButtons(tabId, numbers, methodName);
+    createLockButton(tabId, numbers);
     addToHistory(numbers, methodName);
     launchConfetti();
     insertSupportNudge(document.getElementById(`result-${tabId}`));
@@ -367,9 +899,9 @@ function displayResult(tabId, numbers, methodName, filtered = false) {
 }
 
 // ─── Confetti 효과 ────────────────────────────────────────
-function launchConfetti() {
+function launchConfetti(customPieces) {
   const container = document.getElementById('confettiContainer');
-  const pieces = ['♡', '♦', '★', '✧', '🍀', '♡', '✦', '💕'];
+  const pieces = customPieces || ['♡', '♦', '★', '✧', '🍀', '♡', '✦', '💕'];
   const colors = ['#ff7eb3', '#7ec8c8', '#b4a7d6', '#ffd966', '#ff7272'];
 
   for (let i = 0; i < 15; i++) {
@@ -481,7 +1013,8 @@ function addToHistory(numbers, methodName) {
   const dateStr = `${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getDate().toString().padStart(2, '0')}`;
 
   generationHistory.unshift({ numbers, methodName, time: timeStr, date: dateStr });
-  if (generationHistory.length > 20) generationHistory.pop();
+  const limit = (typeof GameSystem !== 'undefined') ? GameSystem.getHistoryLimit() : 20;
+  if (generationHistory.length > limit) generationHistory.pop();
   saveHistoryToStorage();
   renderHistory();
 }
@@ -610,16 +1143,6 @@ function showNameInfo(nameInfo) {
 
   summaryEl.innerHTML = `총 <strong>${nameInfo.strokes}획</strong> · 오행 <strong>${nameInfo.element.name}(${nameInfo.element.ko})</strong> · ${nameInfo.element.desc}`;
   infoEl.style.display = 'block';
-}
-
-// ─── 설명 표시 ──────────────────────────────────────────
-function showExplanation(type, result) {
-  const box = document.getElementById(`explain-${type}`);
-  if (!box) return;
-
-  const text = ExplainEngine.generate(type, result);
-  box.querySelector('.explain-text').textContent = text;
-  box.style.display = 'flex';
 }
 
 // ─── 분석 카드 렌더링 ─────────────────────────────────────
@@ -803,14 +1326,16 @@ function initDailyFortune() {
 
     shareBtn.addEventListener('click', () => {
       if (navigator.share) {
-        navigator.share({ title: '🍀 오늘의 행운 번호', text: shareText, url: 'https://nick1148.site' }).catch(() => {});
+        navigator.share({ title: '🍀 오늘의 행운 번호', text: shareText, url: 'https://nick1148.site' })
+          .then(() => rewardShare('native')).catch(() => {});
       } else {
         navigator.clipboard.writeText(shareText).then(() => {
-          showToast('복사 완료! 친구에게 공유해보세요 🍀');
+          rewardShare('copy');
         }).catch(() => {
           showToast('공유 기능을 사용할 수 없습니다.');
         });
       }
+      trackEvent('공유_클릭', { type: '오늘의번호_네이티브' });
     });
   }
 
@@ -818,6 +1343,7 @@ function initDailyFortune() {
   const kakaoBtn = document.getElementById('fortuneKakaoBtn');
   if (kakaoBtn) {
     kakaoBtn.addEventListener('click', () => {
+      trackEvent('공유_클릭', { type: '오늘의번호_카카오' });
       if (typeof Kakao !== 'undefined' && Kakao.isInitialized()) {
         Kakao.Share.sendDefault({
           objectType: 'feed',
@@ -825,21 +1351,10 @@ function initDailyFortune() {
             title: '🍀 오늘의 행운 번호',
             description: '오늘의 행운 번호를 뽑아봤어! 🍀\n나만의 행운의 로또 번호를 확인해보세요.',
             imageUrl: 'https://nick1148.site/og-image.png',
-            link: {
-              mobileWebUrl: 'https://nick1148.site',
-              webUrl: 'https://nick1148.site',
-            },
+            link: { mobileWebUrl: 'https://nick1148.site', webUrl: 'https://nick1148.site' },
           },
-          buttons: [
-            {
-              title: '나도 번호 뽑아보기',
-              link: {
-                mobileWebUrl: 'https://nick1148.site',
-                webUrl: 'https://nick1148.site',
-              },
-            },
-          ],
-        });
+          buttons: [{ title: '나도 번호 뽑아보기', link: { mobileWebUrl: 'https://nick1148.site', webUrl: 'https://nick1148.site' } }],
+        }).then(() => rewardShare('kakao'));
       } else {
         showToast('카카오톡 공유를 이용하려면 앱 키가 필요합니다.');
       }
@@ -900,7 +1415,7 @@ function displayMultiSets(tabId, sets, methodName) {
   if (existingShare) existingShare.remove();
 
   setCharacterState('excited');
-  showSpeechBubble('5세트 한번에! 대박 나세요! 🎉');
+  showSpeechBubble(`${sets.length}세트 한번에! 대박 나세요! 🎉`);
   if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
 
   const container = document.createElement('div');
@@ -931,14 +1446,14 @@ function displayMultiSets(tabId, sets, methodName) {
   const shareBar = document.createElement('div');
   shareBar.className = 'share-bar';
   const allText = sets.map((nums, i) => `${String.fromCharCode(65+i)}: ${nums.join(', ')}`).join('\n');
-  const shareText = `🍀 ${methodName} 5세트\n${allText}\n나도 뽑아보기 👉 https://nick1148.site`;
+  const shareText = `🍀 ${methodName} ${sets.length}세트\n${allText}\n나도 뽑아보기 👉 https://nick1148.site`;
 
   shareBar.innerHTML = `
     <button class="share-btn share-copy"><span>📋</span> 복사</button>
     <button class="share-btn share-image"><span>📸</span> 이미지 저장</button>
   `;
   shareBar.querySelector('.share-copy').addEventListener('click', () => {
-    navigator.clipboard.writeText(shareText).then(() => showToast('5세트 번호 복사 완료! 🍀')).catch(() => {});
+    navigator.clipboard.writeText(shareText).then(() => rewardShare('copy')).catch(() => {});
   });
   shareBar.querySelector('.share-image').addEventListener('click', () => {
     if (typeof html2canvas === 'undefined') { showToast('잠시 후 다시 시도해주세요.'); return; }
@@ -948,7 +1463,7 @@ function displayMultiSets(tabId, sets, methodName) {
       link.download = `lotto-5set-${Date.now()}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
-      showToast('이미지 저장 완료! 📸');
+      rewardShare('image');
     });
   });
   resultArea.appendChild(shareBar);
@@ -1046,6 +1561,9 @@ function createShareButtons(tabId, numbers, methodName) {
     <button class="share-btn share-kakao" title="카카오톡 공유">
       <span>💬</span> 카톡 공유
     </button>
+    <button class="share-btn share-challenge" title="친구에게 도전">
+      <span>⚔️</span> 도전!
+    </button>
     <button class="share-btn share-native" title="공유하기" style="display:none">
       <span>📤</span> 공유
     </button>
@@ -1055,6 +1573,7 @@ function createShareButtons(tabId, numbers, methodName) {
   const kakaoBtn = bar.querySelector('.share-kakao');
   if (kakaoBtn) {
     kakaoBtn.addEventListener('click', () => {
+      trackEvent('공유_클릭', { type: '카카오', method: methodName });
       if (typeof Kakao !== 'undefined' && Kakao.isInitialized()) {
         Kakao.Share.sendDefault({
           objectType: 'feed',
@@ -1062,21 +1581,10 @@ function createShareButtons(tabId, numbers, methodName) {
             title: '🍀 로또 번호 예상기',
             description: '오늘의 행운 번호를 뽑아봤어! 🍀\n나만의 행운의 로또 번호를 확인해보세요.',
             imageUrl: 'https://nick1148.site/og-image.png',
-            link: {
-              mobileWebUrl: 'https://nick1148.site',
-              webUrl: 'https://nick1148.site',
-            },
+            link: { mobileWebUrl: 'https://nick1148.site', webUrl: 'https://nick1148.site' },
           },
-          buttons: [
-            {
-              title: '나도 번호 뽑아보기',
-              link: {
-                mobileWebUrl: 'https://nick1148.site',
-                webUrl: 'https://nick1148.site',
-              },
-            },
-          ],
-        });
+          buttons: [{ title: '나도 번호 뽑아보기', link: { mobileWebUrl: 'https://nick1148.site', webUrl: 'https://nick1148.site' } }],
+        }).then(() => rewardShare('kakao'));
       } else {
         showToast('카카오톡 공유를 이용하려면 앱 키가 필요합니다.');
       }
@@ -1086,21 +1594,21 @@ function createShareButtons(tabId, numbers, methodName) {
   // 링크 복사
   bar.querySelector('.share-copy').addEventListener('click', () => {
     navigator.clipboard.writeText(shareText).then(() => {
-      showToast('복사 완료! 친구에게 공유해보세요 🍀');
+      rewardShare('copy');
     }).catch(() => {
-      // fallback
       const ta = document.createElement('textarea');
       ta.value = shareText;
       document.body.appendChild(ta);
       ta.select();
       document.execCommand('copy');
       ta.remove();
-      showToast('복사 완료! 친구에게 공유해보세요 🍀');
+      rewardShare('copy');
     });
   });
 
   // 이미지 저장
   bar.querySelector('.share-image').addEventListener('click', () => {
+    trackEvent('이미지_저장', { method: methodName });
     const resultArea = document.getElementById(`result-${tabId}`);
     if (!resultArea || typeof html2canvas === 'undefined') {
       showToast('잠시 후 다시 시도해주세요.');
@@ -1108,19 +1616,34 @@ function createShareButtons(tabId, numbers, methodName) {
     }
 
     showToast('이미지 생성 중...');
-    html2canvas(resultArea, {
-      backgroundColor: '#fff5f9',
-      scale: 2,
-      useCORS: true
-    }).then(canvas => {
+    html2canvas(resultArea, { backgroundColor: '#fff5f9', scale: 2, useCORS: true }).then(canvas => {
       const link = document.createElement('a');
       link.download = `lotto-${methodName.replace(/[^가-힣a-zA-Z0-9]/g, '')}-${Date.now()}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
-      showToast('이미지가 저장되었습니다! 📸');
+      rewardShare('image');
     }).catch(() => {
       showToast('이미지 생성에 실패했습니다.');
     });
+  });
+
+  // 친구에게 도전 버튼
+  bar.querySelector('.share-challenge').addEventListener('click', () => {
+    const challengeText = `⚔️ 나는 이 번호로 간다!\n🍀 ${methodName}: ${numbersText}\n너도 뽑아서 대결하자! 👉 https://nick1148.site`;
+    if (typeof Kakao !== 'undefined' && Kakao.isInitialized()) {
+      Kakao.Share.sendDefault({
+        objectType: 'feed',
+        content: {
+          title: '⚔️ 로또 번호 대결!',
+          description: `나는 이 번호로 간다! 너도 뽑아서 대결하자!`,
+          imageUrl: 'https://nick1148.site/og-image.png',
+          link: { mobileWebUrl: 'https://nick1148.site', webUrl: 'https://nick1148.site' },
+        },
+        buttons: [{ title: '도전 받기!', link: { mobileWebUrl: 'https://nick1148.site', webUrl: 'https://nick1148.site' } }],
+      }).then(() => rewardShare('kakao'));
+    } else {
+      navigator.clipboard.writeText(challengeText).then(() => rewardShare('copy'));
+    }
   });
 
   // Web Share API (모바일)
@@ -1128,11 +1651,8 @@ function createShareButtons(tabId, numbers, methodName) {
     const nativeBtn = bar.querySelector('.share-native');
     nativeBtn.style.display = '';
     nativeBtn.addEventListener('click', () => {
-      navigator.share({
-        title: '🍀 로또 번호 예상기',
-        text: shareText,
-        url: 'https://nick1148.site'
-      }).catch(() => {});
+      navigator.share({ title: '🍀 로또 번호 예상기', text: shareText, url: 'https://nick1148.site' })
+        .then(() => rewardShare('native')).catch(() => {});
     });
   }
 
@@ -1171,6 +1691,11 @@ function displayChemistryResult(result) {
       <span class="chem-elem">${result.element2.name}(${result.element2.ko})</span>
     </div>
     <div class="chem-element-desc">${result.elementDesc}</div>
+    <div class="chem-detail-section">
+      <div class="chem-element-detail">${result.elementDetail || ''}</div>
+      <div class="chem-advice">💡 ${result.advice || ''}</div>
+      <div class="chem-lucky-tip">🍀 ${result.luckyTip || ''}</div>
+    </div>
     <div class="chem-numbers-label">🍀 공동 행운 번호</div>
     <div class="chem-balls balls-container">${ballsHtml}</div>
     <div class="chem-comment">"${result.comment}"</div>
@@ -1205,32 +1730,22 @@ function displayChemistryResult(result) {
     <button class="share-btn share-native" style="display:none"><span>📤</span> 공유</button>
   `;
 
-  // 카카오톡 공유
+  // 카카오톡 공유 (궁합 딥링크 포함)
   const kakaoBtn = shareBar.querySelector('.share-kakao');
   if (kakaoBtn) {
     kakaoBtn.addEventListener('click', () => {
       if (typeof Kakao !== 'undefined' && Kakao.isInitialized()) {
+        const chemLink = `https://nick1148.site?chem=${encodeURIComponent(result.name1)}`;
         Kakao.Share.sendDefault({
           objectType: 'feed',
           content: {
             title: '💕 궁합 결과 도착!',
             description: `나와 ${result.name2}의 궁합 점수: ${result.score}점! 💕 너도 해봐!`,
             imageUrl: 'https://nick1148.site/og-image.png',
-            link: {
-              mobileWebUrl: 'https://nick1148.site',
-              webUrl: 'https://nick1148.site',
-            },
+            link: { mobileWebUrl: chemLink, webUrl: chemLink },
           },
-          buttons: [
-            {
-              title: '나도 궁합 보기',
-              link: {
-                mobileWebUrl: 'https://nick1148.site',
-                webUrl: 'https://nick1148.site',
-              },
-            },
-          ],
-        });
+          buttons: [{ title: '나도 궁합 보기', link: { mobileWebUrl: chemLink, webUrl: chemLink } }],
+        }).then(() => rewardShare('kakao'));
       } else {
         showToast('카카오톡 공유를 이용하려면 앱 키가 필요합니다.');
       }
@@ -1239,7 +1754,7 @@ function displayChemistryResult(result) {
 
   shareBar.querySelector('.share-copy').addEventListener('click', () => {
     navigator.clipboard.writeText(shareText).then(() => {
-      showToast('궁합 결과 복사 완료! 친구에게 공유해보세요 💕');
+      rewardShare('copy');
     }).catch(() => {
       const ta = document.createElement('textarea');
       ta.value = shareText;
@@ -1247,7 +1762,7 @@ function displayChemistryResult(result) {
       ta.select();
       document.execCommand('copy');
       ta.remove();
-      showToast('궁합 결과 복사 완료! 💕');
+      rewardShare('copy');
     });
   });
 
@@ -1260,7 +1775,7 @@ function displayChemistryResult(result) {
       link.download = `lotto-chemistry-${result.name1}-${result.name2}-${Date.now()}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
-      showToast('궁합 카드 저장 완료! 📸');
+      rewardShare('image');
     });
   });
 
@@ -1311,7 +1826,7 @@ function displayChemistryResult(result) {
       link.download = `lotto-story-${result.name1}-${result.name2}-${Date.now()}.png`;
       link.href = storyCanvas.toDataURL('image/png');
       link.click();
-      showToast('스토리용 이미지 저장 완료! 📱');
+      rewardShare('image');
     });
   });
 
@@ -1319,11 +1834,16 @@ function displayChemistryResult(result) {
     const nativeBtn = shareBar.querySelector('.share-native');
     nativeBtn.style.display = '';
     nativeBtn.addEventListener('click', () => {
-      navigator.share({ title: '💕 로또 궁합 결과', text: shareText, url: 'https://nick1148.site' }).catch(() => {});
+      navigator.share({ title: '💕 로또 궁합 결과', text: shareText, url: 'https://nick1148.site' })
+        .then(() => rewardShare('native')).catch(() => {});
     });
   }
 
   resultArea.appendChild(shareBar);
+
+  // 궁합 번호 잠금 버튼
+  createLockButton('chemistry', result.numbers);
+
   insertSupportNudge(resultArea);
 
   addToHistory(result.numbers, `💕 궁합 (${result.name1}♡${result.name2})`);
@@ -1332,25 +1852,367 @@ function displayChemistryResult(result) {
   setTimeout(() => setCharacterState('idle'), 3000);
 }
 
-// ─── 인라인 후원 nudge ──────────────────────────────────
+// ─── 인라인 후원 nudge (감정적 타이밍 + 맥락별 카피) ────
+const NUDGE_MESSAGES_KO = [
+  '이 번호가 마음에 드셨다면...',
+  '대박 예감! 커피 한잔의 응원이면 충분해요',
+  '행운을 나눠주셔서 감사해요!',
+  '좋은 번호가 나왔네요!',
+  '이 번호로 대박나면 커피 한잔 부탁해요!'
+];
+const NUDGE_MESSAGES_EN = [
+  'If you liked these numbers...',
+  'Feeling lucky! A coffee would mean a lot',
+  'Thanks for sharing the luck!',
+  'Great numbers came out!',
+  'If you win big, buy me a coffee!'
+];
+
 function insertSupportNudge(container) {
-  // 기존 nudge 제거
   const existing = container.querySelector('.result-support-nudge');
   if (existing) existing.remove();
 
   generateCount++;
   sessionStorage.setItem('genCount', generateCount);
 
-  // 2회 이상 생성 시부터 표시
   if (generateCount < 2) return;
+
+  const isEn = typeof I18n !== 'undefined' && I18n.getLang() === 'en';
+  const msgs = isEn ? NUDGE_MESSAGES_EN : NUDGE_MESSAGES_KO;
+  const msg = msgs[Math.floor(Math.random() * msgs.length)];
 
   const nudge = document.createElement('div');
   nudge.className = 'result-support-nudge';
-  nudge.innerHTML = `
-    <span>이 번호가 마음에 드셨다면...</span>
-    <a href="https://qr.kakaopay.com/FM5t5VmBF" target="_blank" rel="noopener" class="nudge-link">☕ 개발자에게 커피 한잔</a>
-  `;
+
+  if (isEn) {
+    nudge.innerHTML = `
+      <span>${msg}</span>
+      <a href="https://buymeacoffee.com/nick1148" target="_blank" rel="noopener" class="nudge-link">☕ Buy me a coffee</a>
+    `;
+  } else {
+    nudge.innerHTML = `
+      <span>${msg}</span>
+      <a href="https://qr.kakaopay.com/FM5t5VmBF" target="_blank" rel="noopener" class="nudge-link">☕ 개발자에게 커피 한잔</a>
+    `;
+  }
   container.appendChild(nudge);
+}
+
+// ─── 번호 잠금 버튼 ─────────────────────────────────────
+function createLockButton(tabId, numbers) {
+  const resultArea = document.getElementById(`result-${tabId}`);
+  if (!resultArea) return;
+
+  const existing = resultArea.querySelector('.lock-number-btn');
+  if (existing) existing.remove();
+
+  const locked = GameSystem.getLockedNumbers();
+  if (locked.length >= 5) return;
+
+  const btn = document.createElement('button');
+  btn.className = 'lock-number-btn';
+  btn.innerHTML = '🔒 번호 잠금 <span style="font-size:0.65rem;opacity:0.7">🍀1</span>';
+  btn.addEventListener('click', () => {
+    if (GameSystem.canAfford(1)) {
+      if (GameSystem.lockNumbers(numbers)) {
+        renderCloverBalance();
+        renderLevelBar();
+        renderLockedNumbers();
+        showToast('🔒 번호가 잠금되었습니다! 🍀-1');
+        btn.remove();
+      } else {
+        showToast('최대 5세트까지 잠금할 수 있습니다.');
+      }
+    } else {
+      showPremiumModal('번호 잠금', 1, () => {
+        if (GameSystem.lockNumbers(numbers)) {
+          renderLockedNumbers();
+          showToast('🔒 번호가 잠금되었습니다!');
+          btn.remove();
+        }
+      });
+    }
+  });
+  resultArea.appendChild(btn);
+}
+
+// ─── 10세트 생성 ──────────────────────────────────────────
+function generateMultiSets10(tabId) {
+  const sets = [];
+  for (let i = 0; i < 10; i++) {
+    const filterOn = isSmartFilterOn(tabId);
+    let numbers;
+    if (tabId === 'random') {
+      numbers = LottoGenerator.smartFilter(LottoGenerator.generateRandom, [], filterOn);
+    } else if (tabId === 'frequent') {
+      numbers = LottoGenerator.smartFilter(LottoGenerator.generateFrequent, [], filterOn);
+    } else if (tabId === 'rare') {
+      numbers = LottoGenerator.smartFilter(LottoGenerator.generateRare, [], filterOn);
+    } else {
+      numbers = LottoGenerator.smartFilter(LottoGenerator.generateRandom, [], filterOn);
+    }
+    const nums = Array.isArray(numbers) ? numbers : numbers.numbers;
+    sets.push(nums);
+  }
+  return sets;
+}
+
+function getMethodEmoji(tabId) {
+  const map = { random: '🎲 완전 랜덤', frequent: '🔥 자주 나온', rare: '❄️ 안 나온' };
+  return map[tabId] || '🎲 완전 랜덤';
+}
+
+// ─── 프리미엄 상세 해석 ──────────────────────────────────
+function showExplanation(type, result) {
+  const box = document.getElementById(`explain-${type}`);
+  if (!box) return;
+
+  const text = ExplainEngine.generate(type, result);
+  box.querySelector('.explain-text').textContent = text;
+  box.style.display = 'flex';
+
+  // 프리미엄 상세 해석 버튼 추가
+  const existing = box.querySelector('.explain-premium-btn');
+  if (existing) existing.remove();
+  const existingText = box.querySelector('.explain-premium-text');
+  if (existingText) existingText.remove();
+
+  // 기능 키 매핑
+  const featureKey = type === 'saju' ? 'sajuDetail' : type === 'name' ? 'nameDetail' : null;
+  const isFreeAvailable = featureKey && GameSystem.checkFreePremium(featureKey);
+
+  const btn = document.createElement('button');
+  btn.className = 'explain-premium-btn' + (isFreeAvailable ? ' free-trial' : '');
+  btn.textContent = isFreeAvailable ? '무료 체험 🆓' : '더 자세히 보기 🍀2';
+
+  function showPremiumDetail() {
+    const detail = generatePremiumExplanation(type, result);
+    const p = document.createElement('div');
+    p.className = 'explain-premium-text';
+    p.innerHTML = detail;
+    box.appendChild(p);
+    btn.remove();
+  }
+
+  btn.addEventListener('click', () => {
+    if (isFreeAvailable) {
+      GameSystem.useFreePremium(featureKey);
+      showPremiumDetail();
+      showToast('첫 체험이에요! 다음부터는 🍀2가 필요해요');
+    } else if (GameSystem.canAfford(2)) {
+      GameSystem.spendClovers(2, 'detail_explain');
+      renderCloverBalance();
+      showPremiumDetail();
+    } else {
+      showPremiumModal('상세 해석', 2, () => {
+        showPremiumDetail();
+      });
+    }
+  });
+  box.appendChild(btn);
+}
+
+function generatePremiumExplanation(type, result) {
+  const numbers = result.numbers;
+  const sum = numbers.reduce((a, b) => a + b, 0);
+  const odd = numbers.filter(n => n % 2 === 1).length;
+  const low = numbers.filter(n => n <= 22).length;
+
+  if (type === 'saju' && result.saju) {
+    const s = result.saju;
+    const analysis = SajuCalculator.analyzePillars(s);
+    const t = analysis.ilganTrait;
+
+    // 오행 분포
+    const elemEntries = Object.entries(analysis.elementCount).sort((a, b) => b[1] - a[1]);
+    const strongest = elemEntries[0];
+    const weakest = elemEntries.filter(e => e[1] > 0).pop() || elemEntries[elemEntries.length - 1];
+    const zeroElems = elemEntries.filter(e => e[1] === 0).map(e => e[0]);
+
+    // 번호별 오행
+    const numElements = numbers.map(n => ({ num: n, elem: SajuCalculator.getNumberElement(n) }));
+    const numElemCount = {};
+    numElements.forEach(ne => { numElemCount[ne.elem] = (numElemCount[ne.elem] || 0) + 1; });
+
+    let detail = '';
+    detail += `<span class="premium-section-title">◆ 일간(日干) 분석</span>`;
+    detail += `${t.name} — ${t.nature}의 기운\n${t.desc}\n행운 방향: ${t.luckyDirection} | 행운 색상: ${t.luckyColor}\n`;
+
+    detail += `\n<span class="premium-section-title">◆ 오행 분포</span>`;
+    detail += `사주에서 ${strongest[0]}이 ${strongest[1]}개로 가장 강합니다.\n`;
+    if (zeroElems.length > 0) {
+      detail += `${zeroElems.join(', ')}은(는) 사주에 없어 부족한 기운이에요.\n`;
+      detail += `→ 부족한 ${zeroElems[0]}의 기운을 번호로 보완하면 균형이 맞아요.\n`;
+    } else {
+      detail += `모든 오행이 골고루 분포되어 균형 잡힌 사주예요!\n`;
+    }
+
+    detail += `\n<span class="premium-section-title">◆ 음양 균형</span>`;
+    detail += `양(陽) ${analysis.yangCount}개 / 음(陰) ${analysis.yinCount}개\n`;
+    if (analysis.yangCount > analysis.yinCount) {
+      detail += `→ 양의 기운이 강해 적극적이고 활동적인 에너지가 번호에 반영됐어요.\n`;
+    } else if (analysis.yinCount > analysis.yangCount) {
+      detail += `→ 음의 기운이 강해 차분하고 신중한 에너지가 번호에 반영됐어요.\n`;
+    } else {
+      detail += `→ 완벽한 음양 균형! 안정적인 에너지가 번호에 담겼어요.\n`;
+    }
+
+    if (analysis.sangSaeng.length > 0 || analysis.sangGeuk.length > 0) {
+      detail += `\n<span class="premium-section-title">◆ 오행 관계 분석</span>`;
+      analysis.sangSaeng.forEach(r => { detail += `상생: ${r.detail}\n`; });
+      analysis.sangGeuk.forEach(r => { detail += `상극: ${r.detail}\n`; });
+    }
+
+    if (analysis.samhapFound.length > 0 || analysis.yukhapFound.length > 0 || analysis.chungFound.length > 0) {
+      detail += `\n<span class="premium-section-title">◆ 지지 특수 관계</span>`;
+      analysis.samhapFound.forEach(r => { detail += `삼합: ${r.desc}\n`; });
+      analysis.yukhapFound.forEach(r => { detail += `육합: ${r.desc}\n`; });
+      analysis.chungFound.forEach(r => { detail += `충: ${r.desc}\n`; });
+    }
+
+    detail += `\n<span class="premium-section-title">◆ 번호별 오행 해석</span>`;
+    numElements.forEach(ne => {
+      const range = SajuCalculator.ELEMENT_NUMBER_RANGE[ne.elem];
+      detail += `${ne.num}번(${ne.elem}) — ${range ? range.desc : ''}\n`;
+    });
+    const numElemSummary = Object.entries(numElemCount).map(([k, v]) => `${k} ${v}개`).join(', ');
+    detail += `→ 번호 오행 분포: ${numElemSummary}\n`;
+
+    detail += `\n<span class="premium-section-title">◆ 오늘의 행운 가이드</span>`;
+    detail += `${t.luckyDirection} 방향의 로또 판매점을 방문해보세요.\n`;
+    detail += `${t.luckyColor} 계열 옷이나 소품이 기운을 상승시켜요.\n`;
+    detail += `번호 합 ${sum}, 홀수 ${odd}개/짝수 ${6 - odd}개는 오늘 사주와 조화를 이뤄요.`;
+
+    return detail;
+  }
+
+  if (type === 'name' && result.nameInfo) {
+    const n = result.nameInfo;
+    let detail = '';
+    detail += `<span class="premium-section-title">◆ 성명학 분석</span>`;
+    detail += `"${n.name}"의 총 ${n.strokes}획 — ${n.element.name}(${n.element.ko}) 오행\n`;
+    detail += `${n.element.desc}을(를) 상징하는 기운이에요.\n`;
+
+    detail += `\n<span class="premium-section-title">◆ 획수 해석</span>`;
+    detail += `각 글자의 초성·중성·종성 에너지가 번호 선택에 영향을 미쳤어요.\n`;
+    detail += `${numbers[0]}번은 첫 글자의 초성 에너지, ${numbers[3]}번은 마지막 글자의 종성 안정감을 담고 있어요.\n`;
+
+    detail += `\n<span class="premium-section-title">◆ 번호 분석</span>`;
+    detail += `번호 합 ${sum}과 이름 총 획수 ${n.strokes}의 수리적 관계가 흥미로운 조합을 만들었어요.\n`;
+    detail += `홀수 ${odd}개/짝수 ${6 - odd}개의 배분이 이름의 음양 구조와 어울려요.`;
+
+    return detail;
+  }
+
+  if (type === 'mbti' && result.mbtiInfo) {
+    const m = result.mbtiInfo;
+    let detail = '';
+    detail += `<span class="premium-section-title">◆ MBTI 심층 분석</span>`;
+    detail += `${m.type}(${m.label}) 유형의 4가지 축이 각각 번호에 영향을 줘요.\n`;
+    detail += `${m.type[0] === 'E' ? '외향(E)' : '내향(I)'} 성향 → ${m.type[0] === 'E' ? '홀수' : '짝수'} 선호도에 반영\n`;
+    detail += `${m.type[1] === 'S' ? '감각(S)' : '직관(N)'} 성향 → ${m.type[1] === 'S' ? '저번호(1-22)' : '고번호(23-45)'} 선호도에 반영\n`;
+
+    detail += `\n<span class="premium-section-title">◆ 번호 해석</span>`;
+    detail += `${numbers[0]}번이 핵심 행운 번호, 합계 ${sum}이 ${m.type} 유형에게 최적이에요.\n`;
+    detail += `저번호 ${low}개/고번호 ${6 - low}개의 분포가 ${m.label}의 에너지 스펙트럼과 맞아요.`;
+
+    return detail;
+  }
+
+  return '';
+}
+
+// ─── 언어별 결제 수단 표시 ───────────────────────────────
+function updateSupportPayment() {
+  const isEn = typeof I18n !== 'undefined' && I18n.getLang() === 'en';
+  const koSection = document.getElementById('supportKo');
+  const enSection = document.getElementById('supportEn');
+  if (koSection) koSection.style.display = isEn ? 'none' : 'block';
+  if (enSection) enSection.style.display = isEn ? 'block' : 'none';
+}
+
+// ─── 클로버 충전소 ──────────────────────────────────────
+let selectedCloverTier = 'popular'; // 기본 선택
+
+function showCloverShop() {
+  const modal = document.getElementById('cloverShopModal');
+  if (!modal) return;
+
+  // 가격 표시 (언어별)
+  const isEn = typeof I18n !== 'undefined' && I18n.getLang() === 'en';
+  const tiers = GameSystem.CLOVER_TIERS;
+  document.getElementById('tierPriceStarter').textContent = isEn ? tiers.starter.priceUSD : tiers.starter.priceKRW;
+  document.getElementById('tierPricePopular').textContent = isEn ? tiers.popular.priceUSD : tiers.popular.priceKRW;
+  document.getElementById('tierPriceVip').textContent = isEn ? tiers.vip.priceUSD : tiers.vip.priceKRW;
+
+  // 선택 상태 초기화
+  updateTierSelection();
+
+  // claim 버튼 상태
+  const claimBtn = document.getElementById('cloverClaimBtn');
+  if (claimBtn) {
+    if (!GameSystem.canClaimToday()) {
+      claimBtn.disabled = true;
+      claimBtn.textContent = isEn ? 'Already claimed today! Come back tomorrow.' : '오늘 이미 충전했어요! 내일 다시 충전할 수 있어요.';
+    } else {
+      claimBtn.disabled = false;
+      claimBtn.textContent = isEn ? '✅ Payment Done! Claim Clovers' : '✅ 결제 완료! 클로버 받기';
+    }
+  }
+
+  modal.style.display = 'flex';
+}
+
+function updateTierSelection() {
+  document.querySelectorAll('.clover-tier').forEach(el => {
+    el.classList.toggle('selected', el.dataset.tier === selectedCloverTier);
+  });
+}
+
+function initCloverShop() {
+  // 티어 선택
+  document.querySelectorAll('.clover-tier').forEach(el => {
+    el.addEventListener('click', () => {
+      selectedCloverTier = el.dataset.tier;
+      updateTierSelection();
+
+      // 결제 링크 열기
+      const isEn = typeof I18n !== 'undefined' && I18n.getLang() === 'en';
+      if (isEn) {
+        window.open('https://buymeacoffee.com/nick1148', '_blank');
+      } else {
+        window.open('https://qr.kakaopay.com/FM5t5VmBF', '_blank');
+      }
+    });
+  });
+
+  // claim 버튼
+  document.getElementById('cloverClaimBtn')?.addEventListener('click', () => {
+    const result = GameSystem.claimCloverPurchase(selectedCloverTier);
+    if (result.success) {
+      renderCloverBalance();
+      renderLevelBar();
+      pulseClover();
+      const isEn = typeof I18n !== 'undefined' && I18n.getLang() === 'en';
+      showToast(isEn ? `🍀 +${result.amount} Clovers added!` : `🍀 +${result.amount} 클로버가 충전되었어요!`);
+      document.getElementById('cloverShopModal').style.display = 'none';
+    } else if (result.reason === 'already_claimed') {
+      const isEn = typeof I18n !== 'undefined' && I18n.getLang() === 'en';
+      showToast(isEn ? 'Already claimed today! Come back tomorrow.' : '오늘 이미 충전했어요!');
+    }
+  });
+
+  // 닫기 버튼
+  document.getElementById('cloverShopClose')?.addEventListener('click', () => {
+    document.getElementById('cloverShopModal').style.display = 'none';
+  });
+
+  // 오버레이 클릭 닫기
+  document.getElementById('cloverShopModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'cloverShopModal') {
+      document.getElementById('cloverShopModal').style.display = 'none';
+    }
+  });
 }
 
 // ─── 유틸 ─────────────────────────────────────────────────

@@ -148,16 +148,42 @@
     <!-- 헤더 -->
     <header class="app-header">
       <div class="header-content">
-        <h1 class="app-title">🍀 로또 번호 예상기</h1>
-        <div class="latest-info" id="latestInfo">
-          <span class="latest-label">최근 회차</span>
-          <span class="latest-round" id="latestRound">로딩 중...</span>
+        <h1 class="app-title" data-i18n="app.title">🍀 로또 번호 예상기</h1>
+        <div class="header-right">
+          <button class="lang-switch-btn" id="langSwitchBtn" title="Language">🌐</button>
+          <div class="clover-display" id="cloverDisplay" title="내 클로버">
+            <span class="clover-icon">🍀</span>
+            <span class="clover-count" id="cloverCount">0</span>
+          </div>
+          <button class="trophy-btn" id="trophyBtn" title="업적">🏆</button>
         </div>
+      </div>
+      <div class="level-bar" id="levelBar">
+        <span class="level-badge" id="levelBadge">🌱 행운 새싹</span>
+        <div class="level-progress"><div class="level-progress-fill" id="levelProgressFill"></div></div>
+      </div>
+      <div class="latest-info" id="latestInfo">
+        <span class="latest-label" data-i18n="header.latest_label">최근 회차</span>
+        <span class="latest-round" id="latestRound">로딩 중...</span>
       </div>
       <div class="latest-numbers" id="latestNumbers">
         <span class="loading-text">데이터 로딩 중...</span>
       </div>
     </header>
+
+    <!-- 오늘의 미션 -->
+    <div class="daily-mission-bar" id="dailyMissionBar" style="display:none">
+      <span class="mission-icon">🎯</span>
+      <span class="mission-text" id="dailyMissionText"></span>
+      <span class="mission-reward">+1🍀</span>
+    </div>
+
+    <!-- MBTI 오늘의 랭킹 (Phase 4) -->
+    <div class="mbti-ranking-banner" id="mbtiRankingBanner" style="display:none">
+      <span class="ranking-title" data-i18n="ranking.title">오늘의 MBTI 행운 랭킹</span>
+      <div class="ranking-top3" id="rankingTop3"></div>
+      <button class="ranking-more-btn" id="rankingMoreBtn">전체 보기</button>
+    </div>
 
     <!-- 오늘의 운세 번호 -->
     <section class="daily-fortune" id="dailyFortune">
@@ -166,19 +192,19 @@
           <span class="fortune-date" id="fortuneDate"></span>
           <span class="fortune-badge">TODAY</span>
         </div>
-        <h2 class="fortune-title">오늘의 행운 번호</h2>
+        <h2 class="fortune-title" data-i18n="fortune.title">오늘의 행운 번호</h2>
         <div class="fortune-balls" id="fortuneBalls"></div>
         <div class="fortune-meta">
           <div class="fortune-item">
-            <span class="fortune-item-label">행운 점수</span>
+            <span class="fortune-item-label" data-i18n="fortune.score">행운 점수</span>
             <span class="fortune-item-value" id="fortuneScore"></span>
           </div>
           <div class="fortune-item">
-            <span class="fortune-item-label">행운 색상</span>
+            <span class="fortune-item-label" data-i18n="fortune.color">행운 색상</span>
             <span class="fortune-item-value" id="fortuneColor"></span>
           </div>
           <div class="fortune-item">
-            <span class="fortune-item-label">행운 숫자</span>
+            <span class="fortune-item-label" data-i18n="fortune.lucky">행운 숫자</span>
             <span class="fortune-item-value" id="fortuneLucky"></span>
           </div>
         </div>
@@ -197,31 +223,31 @@
     <nav class="tab-nav">
       <button class="tab-btn active" data-tab="random">
         <span class="tab-icon">🎲</span>
-        <span class="tab-label">완전 랜덤</span>
+        <span class="tab-label" data-i18n="tab.random">완전 랜덤</span>
       </button>
       <button class="tab-btn" data-tab="frequent">
         <span class="tab-icon">🔥</span>
-        <span class="tab-label">자주 나온</span>
+        <span class="tab-label" data-i18n="tab.frequent">자주 나온</span>
       </button>
       <button class="tab-btn" data-tab="rare">
         <span class="tab-icon">❄️</span>
-        <span class="tab-label">안 나온</span>
+        <span class="tab-label" data-i18n="tab.rare">안 나온</span>
       </button>
       <button class="tab-btn" data-tab="saju">
         <span class="tab-icon">✨</span>
-        <span class="tab-label">내 사주</span>
+        <span class="tab-label" data-i18n="tab.saju">내 사주</span>
       </button>
       <button class="tab-btn" data-tab="name">
         <span class="tab-icon">📛</span>
-        <span class="tab-label">이름</span>
+        <span class="tab-label" data-i18n="tab.name">이름</span>
       </button>
       <button class="tab-btn" data-tab="mbti">
         <span class="tab-icon">🧠</span>
-        <span class="tab-label">MBTI</span>
+        <span class="tab-label" data-i18n="tab.mbti">MBTI</span>
       </button>
       <button class="tab-btn" data-tab="chemistry">
         <span class="tab-icon">💕</span>
-        <span class="tab-label">궁합</span>
+        <span class="tab-label" data-i18n="tab.chemistry">궁합</span>
       </button>
     </nav>
 
@@ -248,6 +274,11 @@
           <button class="generate-btn multi-btn" id="btn-random-multi">
             <span class="btn-icon">🎰</span>
             5세트 뽑기
+          </button>
+          <button class="generate-btn multi-btn premium-btn" id="btn-random-multi10">
+            <span class="btn-icon">🎰</span>
+            10세트 뽑기
+            <span class="premium-cost">🍀3</span>
           </button>
         </div>
         <div class="result-area" id="result-random">
@@ -278,6 +309,11 @@
           <button class="generate-btn multi-btn" id="btn-frequent-multi">
             <span class="btn-icon">🎰</span>
             5세트 뽑기
+          </button>
+          <button class="generate-btn multi-btn premium-btn" id="btn-frequent-multi10">
+            <span class="btn-icon">🎰</span>
+            10세트 뽑기
+            <span class="premium-cost">🍀3</span>
           </button>
         </div>
         <div class="result-area" id="result-frequent">
@@ -313,6 +349,11 @@
             <span class="btn-icon">🎰</span>
             5세트 뽑기
           </button>
+          <button class="generate-btn multi-btn premium-btn" id="btn-rare-multi10">
+            <span class="btn-icon">🎰</span>
+            10세트 뽑기
+            <span class="premium-cost">🍀3</span>
+          </button>
         </div>
         <div class="result-area" id="result-rare">
           <div class="balls-container" id="balls-rare"></div>
@@ -334,12 +375,12 @@
 
         <div class="saju-form">
           <div class="form-group">
-            <label for="birthDate">생년월일</label>
+            <label for="birthDate" data-i18n="form.birthdate">생년월일</label>
             <input type="date" id="birthDate" min="1930-01-01" max="2010-12-31"
               value="1990-01-01">
           </div>
           <div class="form-group">
-            <label for="birthHour">태어난 시간 <span class="optional">(선택)</span></label>
+            <label for="birthHour"><span data-i18n="form.birthtime">태어난 시간</span> <span class="optional" data-i18n="form.birthtime_optional">(선택)</span></label>
             <select id="birthHour">
               <option value="-1">모름 / 선택 안함</option>
               <option value="0">자시 (23:00~01:00)</option>
@@ -400,8 +441,8 @@
 
         <div class="name-form">
           <div class="form-group">
-            <label for="userName">이름</label>
-            <input type="text" id="userName" placeholder="이름을 입력하세요" maxlength="10">
+            <label for="userName" data-i18n="form.name">이름</label>
+            <input type="text" id="userName" placeholder="이름을 입력하세요" data-i18n-placeholder="form.name_placeholder" maxlength="10">
           </div>
           <div class="name-info" id="nameInfo" style="display:none">
             <div class="name-info-row" id="nameDecomposed"></div>
@@ -449,22 +490,22 @@
         <div class="mbti-form">
           <div class="mbti-selector" id="mbtiSelector">
             <div class="mbti-axis">
-              <span class="mbti-axis-label">에너지</span>
+              <span class="mbti-axis-label" data-i18n="mbti.energy">에너지</span>
               <button class="mbti-opt active" data-axis="0" data-value="E">E</button>
               <button class="mbti-opt" data-axis="0" data-value="I">I</button>
             </div>
             <div class="mbti-axis">
-              <span class="mbti-axis-label">인식</span>
+              <span class="mbti-axis-label" data-i18n="mbti.perception">인식</span>
               <button class="mbti-opt active" data-axis="1" data-value="S">S</button>
               <button class="mbti-opt" data-axis="1" data-value="N">N</button>
             </div>
             <div class="mbti-axis">
-              <span class="mbti-axis-label">판단</span>
+              <span class="mbti-axis-label" data-i18n="mbti.judgment">판단</span>
               <button class="mbti-opt active" data-axis="2" data-value="T">T</button>
               <button class="mbti-opt" data-axis="2" data-value="F">F</button>
             </div>
             <div class="mbti-axis">
-              <span class="mbti-axis-label">생활</span>
+              <span class="mbti-axis-label" data-i18n="mbti.lifestyle">생활</span>
               <button class="mbti-opt active" data-axis="3" data-value="J">J</button>
               <button class="mbti-opt" data-axis="3" data-value="P">P</button>
             </div>
@@ -514,13 +555,13 @@
         <div class="chemistry-form">
           <div class="chemistry-inputs">
             <div class="form-group">
-              <label for="chemName1">나의 이름</label>
-              <input type="text" id="chemName1" placeholder="내 이름" maxlength="10">
+              <label for="chemName1" data-i18n="form.my_name">나의 이름</label>
+              <input type="text" id="chemName1" placeholder="내 이름" data-i18n-placeholder="form.my_name_placeholder" maxlength="10">
             </div>
             <div class="chemistry-heart">♡</div>
             <div class="form-group">
-              <label for="chemName2">상대 이름</label>
-              <input type="text" id="chemName2" placeholder="상대 이름" maxlength="10">
+              <label for="chemName2" data-i18n="form.partner_name">상대 이름</label>
+              <input type="text" id="chemName2" placeholder="상대 이름" data-i18n-placeholder="form.partner_name_placeholder" maxlength="10">
             </div>
           </div>
         </div>
@@ -543,7 +584,7 @@
     <!-- 당첨 비교 -->
     <section class="compare-section">
       <button class="compare-btn" id="compareBtn">
-        <span>🎯</span> 내 번호 당첨 확인하기
+        <span>🎯</span> <span data-i18n="compare.btn">내 번호 당첨 확인하기</span>
       </button>
       <div class="compare-result" id="compareResult" style="display:none"></div>
     </section>
@@ -564,39 +605,70 @@
     <!-- 생성 기록 -->
     <section class="history-section">
       <div class="history-header" id="historyToggle">
-        <h2 class="history-title">📋 생성 기록</h2>
+        <h2 class="history-title" data-i18n="history.title">📋 생성 기록</h2>
         <span class="history-toggle-icon" id="historyToggleIcon">▼</span>
       </div>
       <div class="history-body" id="historyBody">
         <div class="history-list" id="historyList">
           <div class="history-empty">
             <div class="empty-icon">🎱</div>
-            <p>아직 생성된 번호가 없어요</p>
-            <p class="empty-sub">위에서 번호를 생성해보세요!</p>
+            <p data-i18n="history.empty">아직 생성된 번호가 없어요</p>
+            <p class="empty-sub" data-i18n="history.empty_sub">위에서 번호를 생성해보세요!</p>
           </div>
         </div>
-        <button class="clear-history-btn" id="clearHistory" style="display:none">기록 지우기</button>
+        <button class="clear-history-btn" id="clearHistory" style="display:none" data-i18n="history.clear">기록 지우기</button>
       </div>
+    </section>
+
+    <!-- 광고 영역 2 (AdSense 승인 후 교체) -->
+    <div class="ad-slot" id="ad-slot-2">
+      <!-- AdSense 슬롯 2 -->
+    </div>
+
+    <!-- 내 행운 번호 (잠금) -->
+    <section class="locked-section" id="lockedSection" style="display:none">
+      <h2 class="locked-title">🔒 내 행운 번호</h2>
+      <div class="locked-list" id="lockedList"></div>
     </section>
 
     <!-- 푸터 -->
     <footer class="app-footer">
-      <p>본 앱은 재미 목적으로 만들어졌습니다. 당첨을 보장하지 않습니다.</p>
-      <p>데이터 출처: <a href="https://www.dhlottery.co.kr" target="_blank" rel="noopener">동행복권</a></p>
+      <p data-i18n="footer.disclaimer">본 앱은 재미 목적으로 만들어졌습니다. 당첨을 보장하지 않습니다.</p>
+      <p><span data-i18n="footer.source">데이터 출처:</span> <a href="https://www.dhlottery.co.kr" target="_blank" rel="noopener" data-i18n="footer.source_link">동행복권</a></p>
       <div class="support-section">
-        <button class="support-btn" id="supportBtn">
+        <button class="support-btn" id="supportBtn" data-i18n="support.btn">
           ☕ 개발자 커피 한잔 사주기
         </button>
         <div class="support-qr" id="supportQr" style="display:none">
-          <p class="support-qr-title">카카오페이로 송금해주세요!</p>
-          <a href="https://qr.kakaopay.com/FM5t5VmBF" target="_blank" rel="noopener" class="support-qr-link">
-            <img src="카카오톡 송금링크.png" alt="카카오페이 송금 QR" class="support-qr-img">
-          </a>
-          <p class="support-qr-name">관익</p>
-          <a href="https://qr.kakaopay.com/FM5t5VmBF" target="_blank" rel="noopener" class="support-pay-btn">
-            💳 카카오페이로 송금하기
-          </a>
-          <button class="support-qr-close" id="supportQrClose">닫기</button>
+          <!-- 한국어 결제 수단 -->
+          <div class="support-ko" id="supportKo">
+            <p class="support-qr-title" data-i18n="support.qr_title">카카오페이로 송금해주세요!</p>
+            <a href="https://qr.kakaopay.com/FM5t5VmBF" target="_blank" rel="noopener" class="support-qr-link">
+              <img src="카카오톡 송금링크.png" alt="카카오페이 송금 QR" class="support-qr-img">
+            </a>
+            <p class="support-qr-name">관익</p>
+            <div class="support-pay-buttons">
+              <a href="https://qr.kakaopay.com/FM5t5VmBF" target="_blank" rel="noopener" class="support-pay-btn kakao-pay">
+                💳 카카오페이로 송금하기
+              </a>
+              <a href="https://toss.me/nick1148" target="_blank" rel="noopener" class="support-pay-btn toss-pay">
+                💙 토스로 송금하기
+              </a>
+            </div>
+          </div>
+          <!-- 영어 결제 수단 -->
+          <div class="support-en" id="supportEn" style="display:none">
+            <p class="support-qr-title">Support the Developer!</p>
+            <div class="support-pay-buttons">
+              <a href="https://buymeacoffee.com/nick1148" target="_blank" rel="noopener" class="support-pay-btn bmc-pay">
+                ☕ Buy Me a Coffee
+              </a>
+              <a href="https://paypal.me/nick1148" target="_blank" rel="noopener" class="support-pay-btn paypal-pay">
+                💳 PayPal
+              </a>
+            </div>
+          </div>
+          <button class="support-qr-close" id="supportQrClose" data-i18n="support.close">닫기</button>
         </div>
       </div>
     </footer>
@@ -605,9 +677,107 @@
   <!-- Confetti 컨테이너 -->
   <div class="confetti-container" id="confettiContainer" aria-hidden="true"></div>
 
+  <!-- 출석 체크 모달 -->
+  <div class="modal-overlay" id="checkinModal" style="display:none">
+    <div class="modal-sheet">
+      <div class="modal-close" id="checkinClose">&times;</div>
+      <div class="checkin-character">🍀</div>
+      <div class="checkin-title" id="checkinTitle">오늘도 왔네!</div>
+      <div class="checkin-reward" id="checkinReward">🍀 +1 클로버</div>
+      <div class="checkin-streak" id="checkinStreak">🔥 1일 연속 출석!</div>
+      <div class="checkin-bonus" id="checkinBonus"></div>
+      <div class="checkin-calendar" id="checkinCalendar"></div>
+      <div class="checkin-next" id="checkinNext"></div>
+      <button class="modal-confirm-btn" id="checkinConfirm">확인</button>
+    </div>
+  </div>
+
+  <!-- 프리미엄 게이트 모달 -->
+  <div class="modal-overlay" id="premiumModal" style="display:none">
+    <div class="modal-sheet">
+      <div class="modal-close" id="premiumClose">&times;</div>
+      <div class="premium-title" id="premiumTitle">이 기능을 열려면</div>
+      <div class="premium-cost-display" id="premiumCostDisplay">🍀 3 클로버가 필요해요!</div>
+      <div class="premium-balance" id="premiumBalance">현재 🍀 0 클로버</div>
+      <div class="premium-actions">
+        <button class="premium-action-btn kakao-action" id="premiumKakao" data-i18n="premium.kakao_share">💬 카톡 공유하고 +2🍀</button>
+        <button class="premium-action-btn copy-action" id="premiumCopy" data-i18n="premium.copy_share">📋 링크 공유하고 +1🍀</button>
+        <button class="premium-action-btn spend-action" id="premiumSpend" style="display:none">🍀 클로버 사용하기</button>
+        <button class="premium-action-btn buy-action" id="premiumBuyClovers" data-i18n="premium.buy_clovers">🛒 클로버 충전하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 클로버 충전소 모달 -->
+  <div class="modal-overlay" id="cloverShopModal" style="display:none">
+    <div class="modal-sheet">
+      <div class="modal-close" id="cloverShopClose">&times;</div>
+      <h2 class="modal-title" data-i18n="clover.shop_title">🍀 클로버 충전소</h2>
+      <p class="clover-shop-desc" data-i18n="clover.shop_desc">클로버를 충전하면 프리미엄 기능을 마음껏 이용할 수 있어요!</p>
+      <div class="clover-tiers">
+        <div class="clover-tier" data-tier="starter" data-amount="15">
+          <div class="tier-name" data-i18n="clover.tier_starter">🍀 스타터</div>
+          <div class="tier-clovers">15🍀</div>
+          <div class="tier-price" id="tierPriceStarter">777원</div>
+        </div>
+        <div class="clover-tier popular" data-tier="popular" data-amount="50">
+          <div class="tier-badge" data-i18n="clover.tier_popular_badge">BEST</div>
+          <div class="tier-name" data-i18n="clover.tier_popular">⭐ 인기</div>
+          <div class="tier-clovers">50🍀</div>
+          <div class="tier-price" id="tierPricePopular">2,000원</div>
+        </div>
+        <div class="clover-tier" data-tier="vip" data-amount="200">
+          <div class="tier-name" data-i18n="clover.tier_vip">👑 VIP</div>
+          <div class="tier-clovers">200🍀</div>
+          <div class="tier-price" id="tierPriceVip">7,777원</div>
+        </div>
+      </div>
+      <p class="clover-shop-after" data-i18n="clover.after_payment">결제 후 아래 버튼을 눌러주세요</p>
+      <button class="clover-claim-btn" id="cloverClaimBtn" data-i18n="clover.claim_btn">✅ 결제 완료! 클로버 받기</button>
+    </div>
+  </div>
+
+  <!-- 업적 모달 -->
+  <div class="modal-overlay" id="achievementModal" style="display:none">
+    <div class="modal-sheet modal-large">
+      <div class="modal-close" id="achievementClose">&times;</div>
+      <h2 class="modal-title">🏆 업적</h2>
+      <div class="achievement-stats" id="achievementStats"></div>
+      <div class="achievement-list" id="achievementList"></div>
+    </div>
+  </div>
+
+  <!-- MBTI 랭킹 모달 -->
+  <div class="modal-overlay" id="mbtiRankingModal" style="display:none">
+    <div class="modal-sheet modal-large">
+      <div class="modal-close" id="mbtiRankingClose">&times;</div>
+      <h2 class="modal-title">오늘의 MBTI 행운 랭킹</h2>
+      <div class="mbti-ranking-list" id="mbtiRankingList"></div>
+    </div>
+  </div>
+
+  <!-- 업적 달성 토스트 (골든) -->
+  <div class="achievement-toast" id="achievementToast" style="display:none">
+    <span class="achievement-toast-icon"></span>
+    <span class="achievement-toast-text"></span>
+  </div>
+
+  <!-- 사주/궁합 로딩 오버레이 -->
+  <div class="loading-overlay" id="loadingOverlay" style="display:none">
+    <div class="loading-content">
+      <div class="loading-symbol">☯</div>
+      <div class="loading-message" id="loadingMessage">분석 중...</div>
+      <div class="loading-progress">
+        <div class="loading-progress-fill" id="loadingProgressFill"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- html2canvas (결과 이미지 저장용) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
 
+  <!-- i18n -->
+  <script src="js/i18n.js"></script>
   <!-- 스크립트 -->
   <script src="js/data.js"></script>
   <script src="js/analysis.js"></script>
@@ -617,6 +787,7 @@
   <script src="js/mbti.js"></script>
   <script src="js/explain.js"></script>
   <script src="js/lotto.js"></script>
+  <script src="js/gamification.js"></script>
   <script src="js/app.js"></script>
   
   <!-- Kakao SDK -->

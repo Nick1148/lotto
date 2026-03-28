@@ -1,0 +1,106 @@
+{
+  "app.title": "🍀 로또 번호 예상기",
+
+  "header.latest_label": "최근 회차",
+  "header.loading": "로딩 중...",
+  "header.data_loading": "데이터 로딩 중...",
+
+  "ranking.title": "오늘의 MBTI 행운 랭킹",
+  "ranking.show_all": "전체 보기",
+  "ranking.modal_title": "오늘의 MBTI 행운 랭킹",
+
+  "fortune.title": "오늘의 행운 번호",
+  "fortune.score": "행운 점수",
+  "fortune.color": "행운 색상",
+  "fortune.lucky": "행운 숫자",
+  "fortune.share": "📤 오늘의 번호 공유하기",
+  "fortune.kakao": "💬 카톡 공유",
+
+  "tab.random": "완전 랜덤",
+  "tab.frequent": "자주 나온",
+  "tab.rare": "안 나온",
+  "tab.saju": "내 사주",
+  "tab.name": "이름",
+  "tab.mbti": "MBTI",
+  "tab.chemistry": "궁합",
+
+  "random.desc": "1~45 중 완전히 무작위로 6개를 선택합니다.",
+  "frequent.desc": "최근 당첨 이력에서 가장 자주 나온 상위 15개 번호 중 6개를 선택합니다.",
+  "rare.desc": "최근 당첨 이력에서 가장 적게 나온 하위 15개 번호 중 6개를 선택합니다.",
+  "saju.desc": "생년월일을 기반으로 사주(四柱)를 계산하여 번호를 생성합니다.\n같은 생년월일이면 항상 같은 번호가 나옵니다.",
+  "name.desc": "이름의 한글 자모를 분해하여 획수와 오행을 계산하고 번호를 생성합니다.\n같은 이름이면 항상 같은 번호가 나옵니다.",
+  "mbti.desc": "MBTI 4축 특성에 기반하여 오늘의 행운 번호를 생성합니다.\n같은 MBTI라도 매일 다른 번호가 나옵니다.",
+  "chem.desc": "두 사람의 이름으로 로또 궁합을 확인하고 공동 행운번호를 생성합니다.\n같은 이름 조합이면 같은 날엔 항상 같은 결과!",
+
+  "btn.generate": "번호 생성하기",
+  "btn.generate5": "5세트 뽑기",
+  "btn.generate10": "10세트 뽑기",
+  "btn.saju_generate": "사주 번호 생성하기",
+  "btn.name_generate": "이름 번호 생성하기",
+  "btn.mbti_generate": "오늘의 MBTI 번호 생성하기",
+  "btn.chem_generate": "궁합 번호 뽑기",
+
+  "filter.stats": "📊 통계 필터",
+
+  "form.birthdate": "생년월일",
+  "form.birthtime": "태어난 시간",
+  "form.birthtime_optional": "(선택)",
+  "form.birthtime_unknown": "모름 / 선택 안함",
+  "form.name": "이름",
+  "form.name_placeholder": "이름을 입력하세요",
+  "form.my_name": "나의 이름",
+  "form.my_name_placeholder": "내 이름",
+  "form.partner_name": "상대 이름",
+  "form.partner_name_placeholder": "상대 이름",
+
+  "mbti.energy": "에너지",
+  "mbti.perception": "인식",
+  "mbti.judgment": "판단",
+  "mbti.lifestyle": "생활",
+
+  "compare.btn": "내 번호 당첨 확인하기",
+
+  "history.title": "📋 생성 기록",
+  "history.empty": "아직 생성된 번호가 없어요",
+  "history.empty_sub": "위에서 번호를 생성해보세요!",
+  "history.clear": "기록 지우기",
+
+  "locked.title": "🔒 내 행운 번호",
+
+  "footer.disclaimer": "본 앱은 재미 목적으로 만들어졌습니다. 당첨을 보장하지 않습니다.",
+  "footer.source": "데이터 출처:",
+  "footer.source_link": "동행복권",
+
+  "support.btn": "☕ 개발자 커피 한잔 사주기",
+  "support.qr_title": "카카오페이로 송금해주세요!",
+  "support.close": "닫기",
+
+  "clover.shop_title": "🍀 클로버 충전소",
+  "clover.shop_desc": "클로버를 충전하면 프리미엄 기능을 마음껏 이용할 수 있어요!",
+  "clover.tier_starter": "🍀 스타터",
+  "clover.tier_popular": "⭐ 인기",
+  "clover.tier_popular_badge": "BEST",
+  "clover.tier_vip": "👑 VIP",
+  "clover.after_payment": "결제 후 아래 버튼을 눌러주세요",
+  "clover.claim_btn": "✅ 결제 완료! 클로버 받기",
+
+  "premium.title_default": "이 기능을 열려면",
+  "premium.kakao_share": "💬 카톡 공유하고 +2🍀",
+  "premium.copy_share": "📋 링크 공유하고 +1🍀",
+  "premium.buy_clovers": "🛒 클로버 충전하기",
+
+  "achievement.title": "🏆 업적",
+
+  "disclaimer.saju": "⚠️ 사주 기반 번호는 재미 목적이며, 당첨을 보장하지 않습니다.\n로또는 완전한 확률 게임입니다. 과도한 구매를 삼가세요.",
+  "disclaimer.name": "⚠️ 이름 기반 번호는 재미 목적이며, 당첨을 보장하지 않습니다.\n로또는 완전한 확률 게임입니다. 과도한 구매를 삼가세요.",
+  "disclaimer.mbti": "⚠️ MBTI 기반 번호는 재미 목적이며, 당첨을 보장하지 않습니다.\n로또는 완전한 확률 게임입니다. 과도한 구매를 삼가세요.",
+  "disclaimer.chem": "⚠️ 궁합 번호는 재미 목적이며, 당첨을 보장하지 않습니다.\n로또는 완전한 확률 게임입니다. 과도한 구매를 삼가세요.",
+
+  "explain.free_btn": "무료 체험 🆓",
+  "explain.premium_btn": "더 자세히 보기 🍀2",
+
+  "loading.analyzing": "분석 중...",
+
+  "freq.top15_title": "🔥 출현 빈도 상위 15개",
+  "freq.bottom15_title": "❄️ 출현 빈도 하위 15개"
+}

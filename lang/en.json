@@ -1,0 +1,106 @@
+{
+  "app.title": "🍀 Lotto Number Predictor",
+
+  "header.latest_label": "Latest Draw",
+  "header.loading": "Loading...",
+  "header.data_loading": "Loading data...",
+
+  "ranking.title": "Today's MBTI Luck Ranking",
+  "ranking.show_all": "View All",
+  "ranking.modal_title": "Today's MBTI Luck Ranking",
+
+  "fortune.title": "Today's Lucky Numbers",
+  "fortune.score": "Luck Score",
+  "fortune.color": "Lucky Color",
+  "fortune.lucky": "Lucky Number",
+  "fortune.share": "📤 Share Today's Numbers",
+  "fortune.kakao": "💬 KakaoTalk",
+
+  "tab.random": "Random",
+  "tab.frequent": "Hot",
+  "tab.rare": "Cold",
+  "tab.saju": "Fortune",
+  "tab.name": "Name",
+  "tab.mbti": "MBTI",
+  "tab.chemistry": "Match",
+
+  "random.desc": "Randomly selects 6 numbers from 1 to 45.",
+  "frequent.desc": "Selects 6 from the top 15 most frequently drawn numbers.",
+  "rare.desc": "Selects 6 from the 15 least frequently drawn numbers.",
+  "saju.desc": "Generates numbers based on your birth date using Eastern Astrology (Four Pillars of Destiny).\nSame birth date always gives the same numbers.",
+  "name.desc": "Analyzes your name's numerology and Five Elements energy to generate numbers.\nSame name always gives the same numbers.",
+  "mbti.desc": "Generates today's lucky numbers based on your MBTI personality.\nSame MBTI gives different numbers each day.",
+  "chem.desc": "Check your lotto compatibility and generate shared lucky numbers!\nSame name pair gives the same result on the same day.",
+
+  "btn.generate": "Generate Numbers",
+  "btn.generate5": "5 Sets",
+  "btn.generate10": "10 Sets",
+  "btn.saju_generate": "Generate Fortune Numbers",
+  "btn.name_generate": "Generate Name Numbers",
+  "btn.mbti_generate": "Generate MBTI Numbers",
+  "btn.chem_generate": "Check Compatibility",
+
+  "filter.stats": "📊 Stats Filter",
+
+  "form.birthdate": "Date of Birth",
+  "form.birthtime": "Birth Time",
+  "form.birthtime_optional": "(optional)",
+  "form.birthtime_unknown": "Unknown / Skip",
+  "form.name": "Name",
+  "form.name_placeholder": "Enter your name",
+  "form.my_name": "My Name",
+  "form.my_name_placeholder": "My name",
+  "form.partner_name": "Partner's Name",
+  "form.partner_name_placeholder": "Their name",
+
+  "mbti.energy": "Energy",
+  "mbti.perception": "Perception",
+  "mbti.judgment": "Judgment",
+  "mbti.lifestyle": "Lifestyle",
+
+  "compare.btn": "Check My Numbers",
+
+  "history.title": "📋 History",
+  "history.empty": "No numbers generated yet",
+  "history.empty_sub": "Generate numbers above to get started!",
+  "history.clear": "Clear History",
+
+  "locked.title": "🔒 My Lucky Numbers",
+
+  "footer.disclaimer": "This app is for entertainment only. Winning is not guaranteed.",
+  "footer.source": "Data source:",
+  "footer.source_link": "Korea Lottery Commission",
+
+  "support.btn": "☕ Buy the Developer a Coffee",
+  "support.qr_title": "Support the Developer!",
+  "support.close": "Close",
+
+  "clover.shop_title": "🍀 Clover Shop",
+  "clover.shop_desc": "Recharge clovers to unlock premium features!",
+  "clover.tier_starter": "🍀 Starter",
+  "clover.tier_popular": "⭐ Popular",
+  "clover.tier_popular_badge": "BEST",
+  "clover.tier_vip": "👑 VIP",
+  "clover.after_payment": "After payment, tap below",
+  "clover.claim_btn": "✅ Done! Claim Clovers",
+
+  "premium.title_default": "To unlock this feature",
+  "premium.kakao_share": "💬 Share on KakaoTalk +2🍀",
+  "premium.copy_share": "📋 Copy Link +1🍀",
+  "premium.buy_clovers": "🛒 Get More Clovers",
+
+  "achievement.title": "🏆 Achievements",
+
+  "disclaimer.saju": "⚠️ Fortune-based numbers are for fun only. Winning is not guaranteed.\nLottery is purely random. Please gamble responsibly.",
+  "disclaimer.name": "⚠️ Name-based numbers are for fun only. Winning is not guaranteed.\nLottery is purely random. Please gamble responsibly.",
+  "disclaimer.mbti": "⚠️ MBTI-based numbers are for fun only. Winning is not guaranteed.\nLottery is purely random. Please gamble responsibly.",
+  "disclaimer.chem": "⚠️ Compatibility numbers are for fun only. Winning is not guaranteed.\nLottery is purely random. Please gamble responsibly.",
+
+  "explain.free_btn": "Free Trial 🆓",
+  "explain.premium_btn": "See Details 🍀2",
+
+  "loading.analyzing": "Analyzing...",
+
+  "freq.top15_title": "🔥 Top 15 Most Frequent",
+  "freq.bottom15_title": "❄️ Top 15 Least Frequent"
+}
