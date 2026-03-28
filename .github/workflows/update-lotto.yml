@@ -1,0 +1,40 @@
+name: Update Lotto Data
+
+on:
+  schedule:
+    - cron: '0 17 * * 6'
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Fetch latest lotto data
+        run: node scripts/fetch-lotto.js
+
+      - name: Check for changes
+        id: changes
+        run: |
+          git diff --quiet data/lotto_history.json && echo "changed=false" >> $GITHUB_OUTPUT || echo "changed=true" >> $GITHUB_OUTPUT
+
+      - name: Commit and push
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          LATEST=$(node -e "const d=JSON.parse(require('fs').readFileSync('data/lotto_history.json','utf8'));console.log(d[d.length-1].drwNo)")
+          git add data/lotto_history.json
+          git commit -m "🔄 로또 ${LATEST}회 당첨번호 자동 업데이트"
+          git push
