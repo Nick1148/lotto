@@ -1385,7 +1385,7 @@ function triggerDahyunEasterEgg(name) {
 
   // 2단계: 메인 타이틀
   setTimeout(() => {
-    titleEl.innerHTML = '사이트 주인의 행복이<br>당신에게 가득할 것입니다';
+    titleEl.innerHTML = '관익이의 행복이<br>당신에게 가득할 것입니다';
     titleEl.classList.add('show');
   }, 1500);
 
