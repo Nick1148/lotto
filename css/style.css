@@ -2421,6 +2421,38 @@ body {
   padding: 2px 8px;
 }
 
+/* --- Bonus Missions --- */
+.bonus-missions-container {
+  margin-bottom: 12px;
+}
+.bonus-mission-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #f3e5f5, #e1bee7);
+  border: 1px solid #ce93d8;
+  border-radius: var(--border-radius-sm);
+  padding: 8px 14px;
+  margin-bottom: 6px;
+  font-size: 0.78rem;
+  animation: fadeIn 0.5s ease;
+}
+.bonus-mission-item.done {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+.bonus-icon { font-size: 0.9rem; }
+.bonus-text { flex: 1; color: var(--color-text); }
+.bonus-reward {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #6a1b9a;
+  background: rgba(156,39,176,0.12);
+  border-radius: 10px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
 /* --- MBTI Ranking Banner --- */
 .mbti-ranking-banner {
   background: linear-gradient(135deg, #e8eaf6, #c5cae9);

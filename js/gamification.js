@@ -30,6 +30,10 @@ const GameSystem = (() => {
     dailyMission: null,
     dailyMissionDate: null,
     dailyMissionDone: false,
+    bonusMissions: [],
+    bonusMissionsDone: [],
+    _todayMethods: [],
+    totalSharestoday: 0,
     firstVisit: true,
     freePremiumUsed: { sajuDetail: false, chemDetail: false, nameDetail: false },
     lastCloverClaim: null,
@@ -67,6 +71,7 @@ const GameSystem = (() => {
   };
 
   // ─── 오늘의 미션 풀 ─────────────────────────────────────
+  // 메인 미션 13개
   const MISSIONS = [
     { id: 'try_saju', text: '오늘은 사주로 번호를 뽑아보세요!', method: 'saju' },
     { id: 'try_name', text: '이름으로 행운 번호를 뽑아보세요!', method: 'name' },
@@ -75,7 +80,22 @@ const GameSystem = (() => {
     { id: 'try_frequent', text: '자주 나온 번호로 뽑아보세요!', method: 'frequent' },
     { id: 'try_rare', text: '안 나온 번호로 역발상 도전!', method: 'rare' },
     { id: 'share_one', text: '오늘 번호를 친구에게 공유해보세요!', action: 'share' },
-    { id: 'gen_3', text: '오늘 3번 이상 번호를 생성해보세요!', action: 'gen3' }
+    { id: 'gen_3', text: '오늘 3번 이상 번호를 생성해보세요!', action: 'gen3' },
+    { id: 'gen_5', text: '오늘 5번 번호를 생성해보세요!', action: 'gen5' },
+    { id: 'try_filter', text: '번호 필터를 사용해보세요!', action: 'use_filter' },
+    { id: 'try_report', text: '주간 행운 리포트를 확인해보세요!', action: 'use_report' },
+    { id: 'share_chem', text: '궁합 결과를 친구에게 공유해보세요!', action: 'share_chem' },
+    { id: 'try_compare', text: '당첨번호 비교 기능을 사용해보세요!', action: 'use_compare' }
+  ];
+
+  // 보너스 미션 풀 (메인과 별도로 2개/일 추가)
+  const BONUS_MISSIONS = [
+    { id: 'bonus_random', text: '랜덤으로 번호 1번 뽑기', method: 'random', reward: 1 },
+    { id: 'bonus_share2', text: '오늘 2번 이상 공유하기', action: 'share2', reward: 2 },
+    { id: 'bonus_all3', text: '3가지 다른 방법으로 번호 생성', action: 'try3methods', reward: 2 },
+    { id: 'bonus_saju_name', text: '사주 + 이름 둘 다 뽑아보기', action: 'saju_and_name', reward: 2 },
+    { id: 'bonus_checkin', text: '출석 체크 완료하기', action: 'checkin', reward: 1 },
+    { id: 'bonus_lock', text: '마음에 드는 번호 1세트 잠금하기', action: 'lock', reward: 1 }
   ];
 
   // ─── 로드/저장 ──────────────────────────────────────────
@@ -125,6 +145,8 @@ const GameSystem = (() => {
     if (state.shareCountDate !== today) {
       state.shareCountToday = { kakao: 0, image: 0, copy: 0, native: 0 };
       state.shareCountDate = today;
+      state.totalSharestoday = 0;
+      state._todayMethods = [];
     }
     if (state.generatedDate !== today) {
       state.generatedToday = false;
@@ -424,9 +446,20 @@ const GameSystem = (() => {
     const today = TODAY();
     if (state.dailyMissionDate !== today) {
       const seed = hashDate(today);
+      // 메인 미션 1개
       state.dailyMission = MISSIONS[seed % MISSIONS.length];
       state.dailyMissionDate = today;
       state.dailyMissionDone = false;
+      // 보너스 미션 2개 (메인과 다른 것)
+      const shuffled = [...BONUS_MISSIONS];
+      let s = seed + 777;
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        s = (s * 1103515245 + 12345) & 0x7fffffff;
+        const j = s % (i + 1);
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      state.bonusMissions = shuffled.slice(0, 2);
+      state.bonusMissionsDone = [false, false];
       save();
     }
   }
@@ -436,22 +469,71 @@ const GameSystem = (() => {
     return { ...state.dailyMission, done: state.dailyMissionDone };
   }
 
-  function checkDailyMission(action) {
-    if (!state || state.dailyMissionDone || !state.dailyMission) return false;
-    const m = state.dailyMission;
-    let completed = false;
+  function getBonusMissions() {
+    if (!state || !state.bonusMissions || state.bonusMissions.length === 0) return [];
+    return state.bonusMissions.map((m, i) => ({
+      ...m,
+      done: state.bonusMissionsDone ? state.bonusMissionsDone[i] : false
+    }));
+  }
 
-    if (m.method && action === m.method) completed = true;
-    if (m.action === 'share' && action === 'share') completed = true;
-    if (m.action === 'gen3' && (state.generatedTodayCount || 0) >= 3) completed = true;
-
-    if (completed) {
-      state.dailyMissionDone = true;
-      addClovers(1, 'daily_mission');
-      save();
-      return true;
+  function checkMissionCondition(m, action) {
+    if (m.method && action === m.method) return true;
+    if (m.action === 'share' && action === 'share') return true;
+    if (m.action === 'share_chem' && action === 'share_chem') return true;
+    if (m.action === 'gen3' && (state.generatedTodayCount || 0) >= 3) return true;
+    if (m.action === 'gen5' && (state.generatedTodayCount || 0) >= 5) return true;
+    if (m.action === 'use_filter' && action === 'use_filter') return true;
+    if (m.action === 'use_report' && action === 'use_report') return true;
+    if (m.action === 'use_compare' && action === 'use_compare') return true;
+    if (m.action === 'share2' && (state.totalSharestoday || 0) >= 2) return true;
+    if (m.action === 'try3methods' && (state._todayMethods || []).length >= 3) return true;
+    if (m.action === 'saju_and_name') {
+      const tm = state._todayMethods || [];
+      return tm.includes('saju') && tm.includes('name');
     }
+    if (m.action === 'checkin' && state.lastCheckIn === TODAY()) return true;
+    if (m.action === 'lock' && action === 'lock') return true;
     return false;
+  }
+
+  function checkDailyMission(action) {
+    if (!state) return false;
+    let anyCompleted = false;
+
+    // 오늘 사용한 방법 추적
+    if (action && !['share', 'share_chem', 'use_filter', 'use_report', 'use_compare', 'lock'].includes(action)) {
+      if (!state._todayMethods) state._todayMethods = [];
+      if (!state._todayMethods.includes(action)) state._todayMethods.push(action);
+    }
+    // 오늘 공유 횟수 추적
+    if (action === 'share' || action === 'share_chem') {
+      state.totalSharestoday = (state.totalSharestoday || 0) + 1;
+    }
+
+    // 메인 미션 체크
+    if (!state.dailyMissionDone && state.dailyMission) {
+      if (checkMissionCondition(state.dailyMission, action)) {
+        state.dailyMissionDone = true;
+        addClovers(1, 'daily_mission');
+        anyCompleted = true;
+      }
+    }
+
+    // 보너스 미션 체크
+    if (state.bonusMissions && state.bonusMissionsDone) {
+      for (let i = 0; i < state.bonusMissions.length; i++) {
+        if (!state.bonusMissionsDone[i] && checkMissionCondition(state.bonusMissions[i], action)) {
+          state.bonusMissionsDone[i] = true;
+          const reward = state.bonusMissions[i].reward || 1;
+          addClovers(reward, 'bonus_mission');
+          anyCompleted = true;
+        }
+      }
+    }
+
+    if (anyCompleted) save();
+    return anyCompleted;
   }
 
   function hashDate(dateStr) {
@@ -671,7 +753,7 @@ const GameSystem = (() => {
     isHistoryExpanded, expandHistory, getHistoryLimit,
     checkAchievementSilent, getAchievements, getUnlockedCount,
     getLevel, getStreak, getCheckInCalendar,
-    getDailyMission, checkDailyMission,
+    getDailyMission, getBonusMissions, checkDailyMission,
     getMbtiRanking, getStats,
     checkFreePremium, useFreePremium,
     claimCloverPurchase, canClaimToday, CLOVER_TIERS,

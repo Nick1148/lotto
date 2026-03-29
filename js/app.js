@@ -128,6 +128,7 @@ function rewardShare(channel) {
     renderCloverBalance();
     showToast('🎯 오늘의 미션 완료! +1🍀');
   }
+  renderBonusMissions();
 }
 
 // ─── 로딩 연출 시스템 ────────────────────────────────────
@@ -245,6 +246,7 @@ function rewardGeneration(method) {
     showToast('🎯 오늘의 미션 완료! +1🍀');
     renderCloverBalance();
   }
+  renderBonusMissions();
 }
 
 function showCheckinModal(result) {
@@ -430,6 +432,25 @@ function initDailyMission() {
   document.getElementById('dailyMissionText').textContent = mission.text;
   if (mission.done) bar.classList.add('done');
   bar.style.display = 'flex';
+
+  // 보너스 미션 렌더링
+  renderBonusMissions();
+}
+
+function renderBonusMissions() {
+  const container = document.getElementById('bonusMissionsContainer');
+  if (!container) return;
+  const bonuses = GameSystem.getBonusMissions();
+  if (!bonuses || bonuses.length === 0) { container.style.display = 'none'; return; }
+
+  container.innerHTML = bonuses.map((m, i) => `
+    <div class="bonus-mission-item ${m.done ? 'done' : ''}">
+      <span class="bonus-icon">⭐</span>
+      <span class="bonus-text">${m.text}</span>
+      <span class="bonus-reward">+${m.reward || 1}🍀</span>
+    </div>
+  `).join('');
+  container.style.display = 'block';
 }
 
 function initMbtiRanking() {
@@ -588,6 +609,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderCloverBalance();
     renderLevelBar();
     setTimeout(() => showCheckinModal(checkinResult), 800);
+    GameSystem.checkDailyMission('checkin');
   }
   if (GameSystem.isFirstVisit()) {
     GameSystem.markNotFirstVisit();
@@ -1520,6 +1542,8 @@ function generateWeeklyReport() {
   container.style.display = 'block';
   btn.disabled = false;
   btn.innerHTML = '다시 분석하기 <span class="premium-cost">🍀5</span>';
+  GameSystem.checkDailyMission('use_report');
+  renderBonusMissions();
 
   // 기록 추가
   addToHistory(top6, '📊 주간 리포트');
@@ -1552,6 +1576,7 @@ function initNumberFilter() {
     }
 
     numberFilter.active = hasFilter;
+    if (hasFilter) GameSystem.checkDailyMission('use_filter');
     document.getElementById('numberFilterModal').style.display = 'none';
 
     // 모든 필터 버튼 상태 업데이트
@@ -2098,6 +2123,8 @@ function compareWithLatest() {
   compareSection.innerHTML = html;
   compareSection.style.display = 'block';
   compareSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  GameSystem.checkDailyMission('use_compare');
+  renderBonusMissions();
 }
 
 // ─── 공유 버튼 ───────────────────────────────────────────
@@ -2471,6 +2498,8 @@ function createLockButton(tabId, numbers) {
         renderCloverBalance();
         renderLevelBar();
         renderLockedNumbers();
+        GameSystem.checkDailyMission('lock');
+        renderBonusMissions();
         showToast('🔒 번호가 잠금되었습니다! 🍀-1');
         btn.remove();
       } else {
