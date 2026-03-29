@@ -3941,3 +3941,206 @@ body {
   text-align: center;
   line-height: 1.5;
 }
+
+/* ===========================
+   Event Banner
+   =========================== */
+.event-banner {
+  margin: 8px auto;
+  max-width: 480px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: eventPulse 2s ease-in-out infinite;
+  color: white;
+  font-size: 0.8rem;
+}
+@keyframes eventPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+.event-banner-icon {
+  font-size: 1.3rem;
+}
+.event-banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.event-banner-text strong {
+  font-size: 0.85rem;
+}
+.event-banner-text span {
+  font-size: 0.75rem;
+  opacity: 0.9;
+}
+
+/* ===========================
+   Daily Insight Card
+   =========================== */
+.daily-insight-card {
+  margin: 8px auto;
+  max-width: 480px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(102,126,234,0.08), rgba(118,75,162,0.08));
+  border: 1px solid rgba(102,126,234,0.15);
+  border-radius: 16px;
+}
+.insight-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.insight-badge {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+.insight-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.insight-score-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.insight-score-circle {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 15px rgba(102,126,234,0.3);
+}
+.insight-score-num {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1;
+}
+.insight-score-label {
+  color: rgba(255,255,255,0.8);
+  font-size: 0.6rem;
+}
+.insight-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+.insight-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+}
+.insight-detail-icon {
+  font-size: 0.9rem;
+}
+.insight-message {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.6);
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+.lucky-time-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255,215,0,0.15);
+  border: 1px solid rgba(255,215,0,0.3);
+  font-size: 0.78rem;
+}
+.lucky-time-bar.is-lucky {
+  background: linear-gradient(135deg, rgba(255,215,0,0.25), rgba(255,165,0,0.25));
+  border-color: rgba(255,165,0,0.5);
+  animation: luckyGlow 1.5s ease-in-out infinite;
+}
+@keyframes luckyGlow {
+  0%, 100% { box-shadow: 0 0 8px rgba(255,215,0,0.3); }
+  50% { box-shadow: 0 0 16px rgba(255,215,0,0.6); }
+}
+.lucky-time-icon { font-size: 1rem; }
+.lucky-time-label {
+  font-weight: 700;
+  color: #ff8c00;
+  font-size: 0.7rem;
+  letter-spacing: 0.5px;
+}
+.lucky-time-value {
+  font-weight: 600;
+  flex: 1;
+}
+.lucky-time-countdown {
+  font-weight: 700;
+  color: #ff6b6b;
+  font-size: 0.75rem;
+}
+
+/* ===========================
+   Referral Banner
+   =========================== */
+.referral-banner {
+  margin: 16px auto;
+  max-width: 480px;
+  padding: 0 12px;
+}
+.referral-banner-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 14px;
+  color: white;
+}
+.referral-icon { font-size: 1.4rem; }
+.referral-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.referral-text strong { font-size: 0.85rem; }
+.referral-text span { font-size: 0.7rem; opacity: 0.85; }
+.referral-copy-btn {
+  background: white;
+  color: #667eea;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* Footer links */
+.footer-links {
+  font-size: 0.7rem;
+  margin-top: 8px;
+}
+.footer-links a {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+}
+.footer-links a:hover {
+  text-decoration: underline;
+}

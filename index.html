@@ -226,6 +226,50 @@
       </div>
     </section>
 
+    <!-- 이벤트 배너 -->
+    <div class="event-banner" id="eventBanner" style="display:none">
+      <span class="event-banner-icon" id="eventBannerIcon"></span>
+      <div class="event-banner-text">
+        <strong id="eventBannerName"></strong>
+        <span id="eventBannerDesc"></span>
+      </div>
+    </div>
+
+    <!-- 오늘의 종합 운세 카드 -->
+    <section class="daily-insight-card" id="dailyInsightCard">
+      <div class="insight-header">
+        <span class="insight-badge">🔮 TODAY</span>
+        <span class="insight-title">오늘의 종합 운세</span>
+      </div>
+      <div class="insight-score-row">
+        <div class="insight-score-circle" id="insightScoreCircle">
+          <span class="insight-score-num" id="insightScore">--</span>
+          <span class="insight-score-label">점</span>
+        </div>
+        <div class="insight-details">
+          <div class="insight-detail-item">
+            <span class="insight-detail-icon" id="insightColorEmoji"></span>
+            <span class="insight-detail-text">행운 색상: <b id="insightColorName"></b></span>
+          </div>
+          <div class="insight-detail-item">
+            <span class="insight-detail-icon">🧭</span>
+            <span class="insight-detail-text">행운 방향: <b id="insightDirection"></b></span>
+          </div>
+          <div class="insight-detail-item">
+            <span class="insight-detail-icon">🔢</span>
+            <span class="insight-detail-text">행운 숫자: <b id="insightLuckyNum"></b></span>
+          </div>
+        </div>
+      </div>
+      <div class="insight-message" id="insightMessage"></div>
+      <div class="lucky-time-bar" id="luckyTimeBar">
+        <span class="lucky-time-icon">⏰</span>
+        <span class="lucky-time-label">LUCKY TIME</span>
+        <span class="lucky-time-value" id="luckyTimeValue"></span>
+        <span class="lucky-time-countdown" id="luckyTimeCountdown"></span>
+      </div>
+    </section>
+
     <!-- ✨ 사주 히어로 섹션 (메인 기능) -->
     <section class="saju-hero" id="sajuHero">
       <div class="saju-hero-card">
@@ -650,10 +694,27 @@
       <div class="locked-list" id="lockedList"></div>
     </section>
 
+    <!-- 친구 초대 배너 -->
+    <div class="referral-banner">
+      <div class="referral-banner-inner">
+        <span class="referral-icon">🎁</span>
+        <div class="referral-text">
+          <strong>친구 초대하면 🍀+5!</strong>
+          <span>친구도 🍀+3 보너스</span>
+        </div>
+        <button class="referral-copy-btn" onclick="copyReferralLink()">초대 링크 복사</button>
+      </div>
+    </div>
+
     <!-- 푸터 -->
     <footer class="app-footer">
       <p data-i18n="footer.disclaimer">본 앱은 재미 목적으로 만들어졌습니다. 당첨을 보장하지 않습니다.</p>
       <p><span data-i18n="footer.source">데이터 출처:</span> <a href="https://www.dhlottery.co.kr" target="_blank" rel="noopener" data-i18n="footer.source_link">동행복권</a></p>
+      <p class="footer-links">
+        <a href="/docs/about.html">서비스 소개</a> ·
+        <a href="/docs/privacy.html">개인정보처리방침</a> ·
+        <a href="/docs/terms.html">이용약관</a>
+      </p>
       <div class="support-section">
         <button class="support-btn" id="supportBtn" data-i18n="support.btn">
           ☕ 개발자 커피 한잔 사주기

@@ -489,16 +489,62 @@ function renderLockedNumbers() {
 
 function handleDeepLink() {
   const params = new URLSearchParams(window.location.search);
+
+  // Referral 처리
+  const refCode = params.get('ref');
+  if (refCode && GameSystem.isFirstVisit()) {
+    handleReferral(refCode);
+  }
+
+  // 궁합 딥링크
   const chemName = params.get('chem');
+  const fromName = params.get('from');
   if (chemName) {
-    // 궁합 탭으로 이동, 이름1 자동입력
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     document.querySelector('.tab-btn[data-tab="chemistry"]')?.classList.add('active');
     document.getElementById('tab-chemistry')?.classList.add('active');
     document.getElementById('chemName1').value = chemName;
-    showToast(`${chemName}님이 궁합을 보내왔어요!`);
+    if (fromName) {
+      document.getElementById('chemName2').value = fromName;
+      showToast(`${fromName}님이 궁합 테스트를 보냈어요! 💕`);
+    } else {
+      showToast(`${chemName}님이 궁합을 보내왔어요!`);
+    }
   }
+}
+
+// ─── Referral 시스템 ──────────────────────────────────────────
+function handleReferral(refCode) {
+  // 신규 유저에게 보너스 클로버 지급
+  GameSystem.addClovers(3, 'referral_bonus');
+  showToast('친구 초대 보너스 🍀+3 지급!');
+  trackEvent('referral_join', { ref: refCode });
+
+  // Firestore에 기록 (로그인 시)
+  if (typeof AuthSystem !== 'undefined') {
+    window._pendingReferral = refCode;
+  }
+}
+
+function getReferralLink() {
+  if (typeof AuthSystem !== 'undefined' && AuthSystem.isLoggedIn()) {
+    const uid = AuthSystem.getUser().uid;
+    return `https://nick1148.site?ref=${uid.substring(0, 8)}`;
+  }
+  // 비로그인: 랜덤 코드
+  const code = Math.random().toString(36).substring(2, 10);
+  return `https://nick1148.site?ref=${code}`;
+}
+
+function copyReferralLink() {
+  const link = getReferralLink();
+  navigator.clipboard.writeText(link).then(() => {
+    showToast('초대 링크가 복사되었어요! 친구에게 공유하세요 🍀');
+    trackEvent('referral_copy');
+  }).catch(() => {
+    showToast(link);
+  });
 }
 
 // ─── 초기화 ───────────────────────────────────────────────
@@ -532,6 +578,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 오늘의 운세 번호 초기화
   initDailyFortune();
+  renderDailyInsight();
+  renderEventBanner();
+  startLuckyTimeCountdown();
 
   // 출석 체크
   const checkinResult = GameSystem.checkIn();
@@ -1730,6 +1779,70 @@ function triggerDahyunEasterEgg(name) {
 }
 
 // ─── 오늘의 운세 번호 ────────────────────────────────────
+// ─── 오늘의 종합 운세 카드 ────────────────────────────────────
+function renderDailyInsight() {
+  const fortune = GameSystem.getDailyFortune();
+
+  document.getElementById('insightScore').textContent = fortune.score;
+  document.getElementById('insightColorEmoji').textContent = fortune.color.emoji;
+  document.getElementById('insightColorName').textContent = fortune.color.name;
+  document.getElementById('insightDirection').textContent = fortune.direction;
+  document.getElementById('insightLuckyNum').textContent = fortune.luckyNumber;
+  document.getElementById('insightMessage').textContent = fortune.message;
+
+  // 점수에 따라 원 색상 변경
+  const circle = document.getElementById('insightScoreCircle');
+  if (fortune.score >= 90) {
+    circle.style.background = 'linear-gradient(135deg, #ffd700, #ff8c00)';
+  } else if (fortune.score >= 80) {
+    circle.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+  }
+
+  // 럭키타임 표시
+  document.getElementById('luckyTimeValue').textContent = fortune.luckyTimeLabel;
+  const bar = document.getElementById('luckyTimeBar');
+  if (fortune.isLuckyTime) {
+    bar.classList.add('is-lucky');
+    document.getElementById('luckyTimeCountdown').textContent = '지금이 행운의 시간!';
+  }
+}
+
+function renderEventBanner() {
+  const event = GameSystem.getActiveEvent();
+  const banner = document.getElementById('eventBanner');
+  if (!event) { banner.style.display = 'none'; return; }
+
+  banner.style.display = 'flex';
+  banner.style.background = event.color;
+  document.getElementById('eventBannerName').textContent = event.name;
+  document.getElementById('eventBannerDesc').textContent = event.desc;
+}
+
+function startLuckyTimeCountdown() {
+  function update() {
+    const fortune = GameSystem.getDailyFortune();
+    const el = document.getElementById('luckyTimeCountdown');
+    const bar = document.getElementById('luckyTimeBar');
+
+    if (fortune.isLuckyTime) {
+      bar.classList.add('is-lucky');
+      const mins = Math.floor(fortune.luckyTimeRemaining / 60);
+      const secs = fortune.luckyTimeRemaining % 60;
+      el.textContent = `남은 시간 ${mins}:${String(secs).padStart(2,'0')}`;
+    } else if (fortune.luckyTimeRemaining > 0) {
+      bar.classList.remove('is-lucky');
+      const hrs = Math.floor(fortune.luckyTimeRemaining / 3600);
+      const mins = Math.floor((fortune.luckyTimeRemaining % 3600) / 60);
+      el.textContent = `${hrs}시간 ${mins}분 후`;
+    } else {
+      bar.classList.remove('is-lucky');
+      el.textContent = '내일을 기대하세요!';
+    }
+  }
+  update();
+  setInterval(update, 60000); // 매분 업데이트
+}
+
 function initDailyFortune() {
   const now = new Date();
   const dateStr = `${now.getFullYear()}.${(now.getMonth()+1).toString().padStart(2,'0')}.${now.getDate().toString().padStart(2,'0')}`;

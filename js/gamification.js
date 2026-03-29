@@ -33,7 +33,10 @@ const GameSystem = (() => {
     firstVisit: true,
     freePremiumUsed: { sajuDetail: false, chemDetail: false, nameDetail: false },
     lastCloverClaim: null,
-    lastCloverTier: null
+    lastCloverTier: null,
+    referralCode: null,
+    referredBy: null,
+    referralCount: 0
   };
 
   let state = null;
@@ -170,8 +173,14 @@ const GameSystem = (() => {
 
     if (state.lastCheckIn === yesterdayStr) {
       state.streak += 1;
-    } else {
-      state.streak = 1;
+    } else if (state.lastCheckIn !== today) {
+      // 스트릭 보호권 체크
+      if (state.streakShield && state.streakShield > 0 && state.streak > 0) {
+        state.streakShield -= 1;
+        state.streak += 1; // 보호권 사용, 스트릭 유지
+      } else {
+        state.streak = 1;
+      }
     }
     if (state.streak > state.longestStreak) state.longestStreak = state.streak;
 
@@ -185,11 +194,31 @@ const GameSystem = (() => {
     else if (state.streak >= 7) { reward += 2; bonusMsg = '7일 연속! +2 보너스!'; }
     else if (state.streak >= 3) { reward += 1; bonusMsg = '3일 연속! +1 보너스!'; }
 
+    // 마일스톤 보상
+    let milestoneMsg = '';
+    if (state.streak === 50 && !state.milestone50) {
+      reward += 10; milestoneMsg = '🎉 50일 연속 달성! +10 보너스!';
+      state.milestone50 = true;
+    } else if (state.streak === 100 && !state.milestone100) {
+      reward += 30; milestoneMsg = '🏆 100일 연속 달성! +30 보너스!';
+      state.milestone100 = true;
+    }
+
+    // 이벤트 배율 적용
+    const event = getActiveEvent();
+    if (event && event.multiplier) {
+      reward = reward * event.multiplier;
+      bonusMsg = (bonusMsg ? bonusMsg + ' ' : '') + `${event.name} ${event.multiplier}배!`;
+    }
+    if (event && event.bonus) {
+      reward += event.bonus;
+    }
+
     addClovers(reward, 'checkin');
     checkAchievementSilent('streak_7', state.streak >= 7);
     checkAchievementSilent('streak_30', state.streak >= 30);
 
-    return { rewarded: true, amount: reward, streak: state.streak, bonusMsg, isFirst: state.firstVisit };
+    return { rewarded: true, amount: reward, streak: state.streak, bonusMsg, milestoneMsg, isFirst: state.firstVisit };
   }
 
   function markNotFirstVisit() {
@@ -243,7 +272,13 @@ const GameSystem = (() => {
       reward += 1;
     }
 
-    if (reward > 0) addClovers(reward, 'generation');
+    // 이벤트 배율 적용
+    if (reward > 0) {
+      const event = getActiveEvent();
+      if (event && event.multiplier) reward = reward * event.multiplier;
+      if (event && event.bonus) reward += event.bonus;
+      addClovers(reward, 'generation');
+    }
 
     // 업적 체크
     checkAchievementSilent('first_gen', state.totalGenerated >= 1);
@@ -513,6 +548,119 @@ const GameSystem = (() => {
     save();
   }
 
+  // ─── 스트릭 보호권 ──────────────────────────────────────
+  function buyStreakShield() {
+    if (!state) return false;
+    if (!canAfford(5)) return false;
+    spendClovers(5);
+    state.streakShield = (state.streakShield || 0) + 1;
+    save();
+    return true;
+  }
+
+  function getStreakShieldCount() {
+    return state ? (state.streakShield || 0) : 0;
+  }
+
+  // ─── 오늘의 종합 운세 ─────────────────────────────────────
+  function getDailyFortune() {
+    const today = TODAY();
+    const seed = hashDate(today);
+    let s = seed;
+    function next() { s = (s * 1103515245 + 12345) & 0x7fffffff; return s; }
+
+    // 행운 점수 (60~99, 너무 낮으면 재미 없음)
+    const score = 60 + (next() % 40);
+
+    // 행운 색상
+    const colors = [
+      { name: '빨간색', hex: '#ff6b6b', emoji: '🔴' },
+      { name: '주황색', hex: '#ff9f43', emoji: '🟠' },
+      { name: '노란색', hex: '#ffd93d', emoji: '🟡' },
+      { name: '초록색', hex: '#6bcb77', emoji: '🟢' },
+      { name: '파란색', hex: '#4d96ff', emoji: '🔵' },
+      { name: '보라색', hex: '#9b59b6', emoji: '🟣' },
+      { name: '분홍색', hex: '#ff7eb3', emoji: '💗' },
+      { name: '금색', hex: '#ffd700', emoji: '✨' }
+    ];
+    const color = colors[next() % colors.length];
+
+    // 행운 시간대 (2시간 단위, 12구간)
+    const luckyHourStart = (next() % 12) * 2;
+    const luckyHourEnd = luckyHourStart + 2;
+    const luckyTimeLabel = `${String(luckyHourStart).padStart(2,'0')}:00~${String(luckyHourEnd).padStart(2,'0')}:00`;
+
+    // 행운 방향
+    const directions = ['동쪽', '서쪽', '남쪽', '북쪽', '동남쪽', '서남쪽', '동북쪽', '서북쪽'];
+    const direction = directions[next() % directions.length];
+
+    // 행운 숫자 (1~45)
+    const luckyNumber = (next() % 45) + 1;
+
+    // 오늘의 한마디
+    const messages = [
+      '오늘은 직감을 믿어보세요! 예상치 못한 행운이 찾아옵니다.',
+      '주변 사람들과 함께하면 행운이 두 배! 함께 번호를 뽑아보세요.',
+      '꾸준함이 빛을 발하는 날! 매일의 루틴이 행운을 부릅니다.',
+      '새로운 시도가 행운을 가져오는 날! 평소와 다른 방법을 써보세요.',
+      '차분하게 분석하면 좋은 결과가 있을 거예요. 통계를 참고해보세요.',
+      '오늘의 행운은 나눔에서 옵니다. 친구에게 번호를 공유해보세요!',
+      '긍정적인 마음이 행운을 끌어당기는 날! 웃으면서 뽑아보세요.',
+      '오늘은 과감하게! 평소 안 쓰던 번호에 행운이 숨어있어요.',
+      '작은 행운이 큰 행운으로 이어지는 날! 클로버를 아끼지 마세요.',
+      '오행의 기운이 강한 날! 사주 기반 번호가 특히 좋아요.',
+      '이름에 숨겨진 에너지가 활성화되는 날! 이름 번호를 뽑아보세요.',
+      '우주가 당신 편인 날! 마음 가는 대로 선택하세요.'
+    ];
+    const message = messages[next() % messages.length];
+
+    // 현재 럭키타임인지
+    const now = new Date();
+    const currentHour = now.getHours();
+    const isLuckyTime = currentHour >= luckyHourStart && currentHour < luckyHourEnd;
+
+    // 럭키타임까지 남은 시간(초)
+    let luckyTimeRemaining = 0;
+    if (!isLuckyTime) {
+      let targetHour = luckyHourStart;
+      if (currentHour >= luckyHourEnd) {
+        // 이미 지남 → 내일
+        luckyTimeRemaining = -1;
+      } else {
+        const target = new Date(now);
+        target.setHours(targetHour, 0, 0, 0);
+        luckyTimeRemaining = Math.max(0, Math.floor((target - now) / 1000));
+      }
+    } else {
+      const end = new Date(now);
+      end.setHours(luckyHourEnd, 0, 0, 0);
+      luckyTimeRemaining = Math.max(0, Math.floor((end - now) / 1000));
+    }
+
+    return {
+      score, color, luckyTimeLabel, luckyHourStart, luckyHourEnd,
+      direction, luckyNumber, message, isLuckyTime, luckyTimeRemaining
+    };
+  }
+
+  // ─── 이벤트 시스템 ─────────────────────────────────────────
+  function getActiveEvent() {
+    const now = new Date();
+    const day = now.getDate();
+    const dayOfWeek = now.getDay(); // 0=일, 6=토
+
+    if (dayOfWeek === 6) {
+      return { id: 'saturday', name: '🎰 추첨일 이벤트', desc: '오늘 모든 보상 2배!', multiplier: 2, color: '#ff6b6b' };
+    }
+    if (day === 1) {
+      return { id: 'first_day', name: '🎊 월초 대박 기원', desc: '출석 보상 3배!', multiplier: 3, color: '#ffd700' };
+    }
+    if (day % 7 === 0) {
+      return { id: 'lucky7', name: '🍀 럭키 세븐 데이', desc: '보너스 클로버 +1!', bonus: 1, color: '#51cf66' };
+    }
+    return null;
+  }
+
   // ─── Public API ─────────────────────────────────────────
   return {
     load, getBalance, addClovers, spendClovers, canAfford,
@@ -528,6 +676,8 @@ const GameSystem = (() => {
     checkFreePremium, useFreePremium,
     claimCloverPurchase, canClaimToday, CLOVER_TIERS,
     getState, loadFromCloud,
+    getDailyFortune, getActiveEvent,
+    buyStreakShield, getStreakShieldCount,
     ACHIEVEMENTS, LEVELS
   };
 })();
