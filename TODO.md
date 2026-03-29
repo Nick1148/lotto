@@ -218,13 +218,64 @@
 - [x] `scripts/daily-content.js` — 오늘의 행운번호 + MBTI 랭킹 + 운세 콘텐츠 생성
 - [x] Telegram Bot API 자동 발송 (환경변수: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`)
 - [x] X(Twitter) API v2 자동 트윗 (OAuth 1.0a, 280자 이내, 해시태그 포함)
-- [ ] **TODO**: GitHub Secrets에 API 키 등록 필요 (수동)
+- [ ] **수동 작업 필요** — 아래 순서대로 진행
+
+#### 단계 1: 워크플로우 파일 push (1분)
+```bash
+# 터미널에서 직접 실행 (인터랙티브 로그인 필요)
+gh auth refresh -h github.com -s workflow
+# 브라우저 열리면 로그인 → 권한 승인
+# 완료 후:
+cd "C:\Users\rhks1\OneDrive\바탕화~1-DESKTOP-SS4DKRL-213\안티그래비티\test\로또번호"
+git push origin master
+```
+
+#### 단계 2: Telegram Bot 생성 (3분)
+1. 텔레그램에서 `@BotFather` 검색 → `/newbot` 입력
+2. 봇 이름: `로또행운번호봇` / username: `lotto_lucky_bot` (중복 시 변경)
+3. **토큰 복사** → 메모 (예: `7123456789:AAH...`)
+4. 텔레그램에서 채널 생성: `@lotto_lucky_daily` (또는 원하는 이름)
+5. 채널 설정 → 관리자 추가 → 위에서 만든 봇 추가
+6. 채널 ID 확인: `https://api.telegram.org/bot{토큰}/getUpdates` 접속 → chat id 확인
+
+#### 단계 3: X(Twitter) API 키 발급 (5~10분)
+1. https://developer.twitter.com 접속 → 개발자 계정 신청 (무료 Basic)
+2. Project → App 생성 → Keys and Tokens 탭
+3. **4개 키 복사**: API Key, API Secret, Access Token, Access Token Secret
+
+#### 단계 4: GitHub Secrets 등록 (2분)
+1. https://github.com/Nick1148/lotto/settings/secrets/actions 접속
+2. "New repository secret" 클릭 → 아래 6개 등록:
+
+| Secret 이름 | 값 |
+|---|---|
+| `TELEGRAM_BOT_TOKEN` | BotFather에서 받은 토큰 |
+| `TELEGRAM_CHAT_ID` | 채널 ID (예: `@lotto_lucky_daily` 또는 `-100...` 숫자) |
+| `X_API_KEY` | X API Key |
+| `X_API_SECRET` | X API Secret |
+| `X_ACCESS_TOKEN` | X Access Token |
+| `X_ACCESS_SECRET` | X Access Token Secret |
+
+#### 단계 5: 테스트 (1분)
+1. GitHub repo → Actions 탭 → "Daily Lucky Content" → "Run workflow" 클릭
+2. 텔레그램 채널에 메시지 도착 확인
+3. X 계정에 트윗 게시 확인
+- 환경변수 하나라도 없으면 해당 플랫폼은 건너뜀 (에러 없음)
 
 ### 2-2. 커뮤니티 시딩 템플릿
 - [x] `홍보글템플릿.md` 확장 — 7개 플랫폼 대응
   - 네이버 카페 / DC갤·에펨코리아 / X(트위터) 3종 / 인스타그램 / 에브리타임 / 카카오톡 3종
 - [x] 주간 시딩 일정표 (3주 로테이션)
-- [ ] **TODO**: 각 플랫폼에 실제 게시 (수동)
+- [ ] **수동 작업 필요** — 홍보글 게시 (홍보글템플릿.md 복사-붙여넣기)
+
+| 순서 | 플랫폼 | 글 톤 | 템플릿 섹션 |
+|------|--------|--------|------------|
+| 1 | 에브리타임 | 체험 후기 ("ㅋㅋ 해봤는데") | 섹션 6 |
+| 2 | DCinside 로또갤 | 짧고 임팩트 | 섹션 2 |
+| 3 | 네이버 카페 (로또 관련) | 정보성 | 섹션 1 |
+| 4 | X(트위터) | MBTI/궁합/사주 3종 | 섹션 3 |
+| 5 | 인스타그램 | 이미지+캡션 | 섹션 4 |
+| 6 | 카카오 오픈채팅 | 정중한 대학생 버전 | 섹션 5 |
 
 ### 2-3. 오늘의 미션 확장 (8→13개 + 보너스 미션)
 - [x] 메인 미션 13개로 확장
