@@ -280,7 +280,7 @@ async function main() {
   const tweet = buildTweet(data);
   console.log('\n--- X 트윗 ---');
   console.log(tweet);
-  console.log(`(${tweet.length}/280자)`);
+  console.log(`${tweet.length}/280자`);
   await postTweet(tweet);
 
   console.log('\n✅ 일일 콘텐츠 발송 완료');
