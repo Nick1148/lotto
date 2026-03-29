@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#fff5f9">
+  <title>로또 통계 분석 | 로또 번호 예상기 🍀</title>
+  <meta name="description" content="역대 로또 당첨 번호의 통계 분석 결과를 확인하세요. 자주 나온 번호, 안 나온 번호, 번호 합계 분포, 홀짝 비율 등 다양한 통계 정보를 제공합니다.">
+  <link rel="canonical" href="https://nick1148.site/docs/lotto-stats.html">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #fff5f9; font-family: 'Jua', sans-serif; color: #333; line-height: 1.8; }
+    .container { max-width: 700px; margin: 0 auto; padding: 24px 20px 40px; }
+    header { text-align: center; padding: 20px 0 16px; border-bottom: 2px solid #ffd6e7; margin-bottom: 28px; }
+    header h1 { font-size: 1.6rem; color: #d63384; }
+    header a { display: inline-block; margin-top: 8px; color: #d63384; text-decoration: none; font-size: 0.95rem; }
+    header a:hover { text-decoration: underline; }
+    h2 { font-size: 1.3rem; color: #d63384; margin: 28px 0 12px; padding-left: 12px; border-left: 4px solid #ff8fb1; }
+    h3 { font-size: 1.1rem; color: #e75480; margin: 20px 0 8px; }
+    p { margin-bottom: 14px; font-size: 1rem; }
+    ul, ol { margin: 10px 0 16px 24px; }
+    li { margin-bottom: 6px; }
+    .stat-card { background: white; padding: 20px; border-radius: 14px; margin: 16px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .stat-card h3 { color: #d63384; margin-top: 0; }
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+    .stat-item { background: white; padding: 16px; border-radius: 12px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+    .stat-item .number { font-size: 2rem; color: #d63384; }
+    .stat-item .label { font-size: 0.85rem; color: #888; margin-top: 4px; }
+    .highlight { background: #ffe0ec; padding: 16px 20px; border-radius: 12px; margin: 16px 0; }
+    .ball { display: inline-flex; width: 36px; height: 36px; border-radius: 50%; align-items: center; justify-content: center; color: white; font-size: 0.9rem; font-weight: bold; margin: 3px; }
+    .ball-1 { background: #fbc400; }
+    .ball-2 { background: #69c8f2; }
+    .ball-3 { background: #ff7272; }
+    .ball-4 { background: #aaa; }
+    .ball-5 { background: #b0d840; }
+    .footer-nav { margin-top: 40px; padding-top: 20px; border-top: 2px solid #ffd6e7; }
+    .footer-nav h3 { font-size: 1rem; color: #d63384; border: none; padding: 0; margin-bottom: 10px; }
+    .footer-nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
+    .footer-nav li { margin: 0; }
+    .footer-nav a { display: inline-block; padding: 8px 16px; background: #fff; border: 1px solid #ffd6e7; border-radius: 20px; color: #d63384; text-decoration: none; font-size: 0.9rem; transition: background 0.2s; }
+    .footer-nav a:hover { background: #ffd6e7; }
+    footer { text-align: center; margin-top: 24px; font-size: 0.85rem; color: #999; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📊 로또 통계 분석</h1>
+      <a href="https://nick1148.site">← 메인 페이지로 돌아가기</a>
+    </header>
+
+    <p>
+      역대 로또 당첨 번호를 분석하면 흥미로운 통계 패턴을 발견할 수 있습니다.
+      물론 매 추첨은 독립적인 사건이므로 과거 데이터가 미래를 예측하지는 못하지만,
+      통계를 이해하면 번호 선택에 참고할 수 있는 유용한 정보를 얻을 수 있습니다.
+    </p>
+
+    <h2>기본 통계</h2>
+
+    <div class="stat-grid">
+      <div class="stat-item">
+        <div class="number">8,145,060</div>
+        <div class="label">전체 가능한 조합 수</div>
+      </div>
+      <div class="stat-item">
+        <div class="number">1/8,145,060</div>
+        <div class="label">1등 당첨 확률</div>
+      </div>
+      <div class="stat-item">
+        <div class="number">45</div>
+        <div class="label">선택 가능 번호 (1~45)</div>
+      </div>
+      <div class="stat-item">
+        <div class="number">6+1</div>
+        <div class="label">당첨번호 + 보너스</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <h3>🔥 자주 나온 번호 TOP 10</h3>
+      <p>역대 추첨에서 가장 많이 출현한 번호들입니다. 이 번호들은 통계적으로 출현 빈도가 높지만, 각 추첨은 독립 사건이므로 다음 추첨에서의 확률은 동일합니다.</p>
+      <p style="text-align:center; margin-top: 12px;">
+        <span class="ball ball-1">34</span>
+        <span class="ball ball-2">12</span>
+        <span class="ball ball-1">27</span>
+        <span class="ball ball-3">33</span>
+        <span class="ball ball-2">18</span>
+        <span class="ball ball-1">20</span>
+        <span class="ball ball-5">43</span>
+        <span class="ball ball-2">17</span>
+        <span class="ball ball-3">40</span>
+        <span class="ball ball-1">1</span>
+      </p>
+      <p style="font-size: 0.85rem; color: #888; text-align: center; margin-top: 8px;">* 2024년 기준 누적 데이터</p>
+    </div>
+
+    <div class="stat-card">
+      <h3>❄️ 가장 적게 나온 번호 TOP 5</h3>
+      <p>상대적으로 출현 빈도가 낮은 번호들입니다. "콜드넘버" 전략을 선호하는 분들이 주목하는 번호입니다.</p>
+      <p style="text-align:center; margin-top: 12px;">
+        <span class="ball ball-4">9</span>
+        <span class="ball ball-4">22</span>
+        <span class="ball ball-4">41</span>
+        <span class="ball ball-4">29</span>
+        <span class="ball ball-4">44</span>
+      </p>
+    </div>
+
+    <h2>번호 합계 분포</h2>
+    <p>
+      당첨 번호 6개의 합계를 분석하면 정규분포에 가까운 곡선이 나타납니다.
+      이론적으로 가능한 합계 범위는 21(1+2+3+4+5+6)부터 255(40+41+42+43+44+45)까지이지만,
+      실제 당첨 번호의 합계는 대부분 100~175 사이에 집중되어 있습니다.
+    </p>
+
+    <div class="highlight">
+      <h3>합계 통계 요약</h3>
+      <ul>
+        <li><strong>평균 합계:</strong> 약 138 (이론값 138)</li>
+        <li><strong>가장 흔한 범위:</strong> 100~175 (전체의 약 72%)</li>
+        <li><strong>극단값 (21~60, 220~255):</strong> 거의 출현하지 않음</li>
+      </ul>
+      <p>로또 번호 예상기의 "스마트 필터"는 합계가 100~175 범위에 들어오는 번호 조합만 통과시킵니다.</p>
+    </div>
+
+    <h2>홀짝 비율 분석</h2>
+    <p>
+      당첨 번호 6개 중 홀수와 짝수의 비율을 분석하면, 완전 홀수(6:0)나 완전 짝수(0:6)는
+      극히 드물게 나타납니다. 가장 흔한 비율은 3:3이며, 2:4 또는 4:2도 자주 출현합니다.
+    </p>
+
+    <div class="stat-card">
+      <h3>홀짝 비율별 출현 빈도</h3>
+      <ul>
+        <li><strong>홀3:짝3</strong> — 가장 자주 출현 (약 33%)</li>
+        <li><strong>홀4:짝2</strong> — 두 번째 (약 25%)</li>
+        <li><strong>홀2:짝4</strong> — 세 번째 (약 25%)</li>
+        <li><strong>홀5:짝1 / 홀1:짝5</strong> — 드문 편 (각 약 7%)</li>
+        <li><strong>홀6:짝0 / 홀0:짝6</strong> — 매우 드묾 (각 약 1.5%)</li>
+      </ul>
+    </div>
+
+    <h2>고저 분포 (저번호 vs 고번호)</h2>
+    <p>
+      1~22를 저번호, 23~45를 고번호로 구분할 때, 저번호와 고번호가 고르게 섞인 조합이
+      훨씬 더 자주 당첨됩니다. 한쪽으로 치우친 조합은 출현 빈도가 낮습니다.
+    </p>
+    <ul>
+      <li><strong>저3:고3</strong> — 가장 이상적인 분포</li>
+      <li><strong>저2:고4 또는 저4:고2</strong> — 흔한 분포</li>
+      <li><strong>저1:고5 이상</strong> — 드문 분포</li>
+    </ul>
+
+    <h2>연속 번호 패턴</h2>
+    <p>
+      연속된 번호(예: 5-6, 12-13-14)가 포함된 당첨 조합은 전체의 약 60% 이상입니다.
+      반대로 연속 번호가 전혀 없는 경우는 약 40% 정도입니다.
+      연속 번호를 무조건 피하는 것은 오히려 불리할 수 있습니다.
+    </p>
+
+    <h2>번호 끝자리 분석</h2>
+    <p>
+      당첨 번호의 끝자리(일의 자리)를 분석하면, 특정 끝자리가 약간 더 자주 나타나는 경향이 있습니다.
+      하지만 그 차이는 매우 작아서 통계적으로 유의미하다고 보기 어렵습니다.
+      45개 번호에서 끝자리별 개수가 다르기 때문에 생기는 자연스러운 현상입니다.
+    </p>
+
+    <div class="highlight">
+      <h3>로또 번호 예상기의 스마트 필터</h3>
+      <p>
+        위의 모든 통계 분석을 종합하여, 로또 번호 예상기는 "스마트 필터" 기능을 제공합니다.
+        이 필터는 합계 범위, 홀짝 비율, 고저 분포 등을 자동으로 체크하여
+        통계적으로 이상적인 조합만 통과시킵니다. 번호 생성 시 "통계 필터" 옵션을 켜면 활성화됩니다.
+      </p>
+    </div>
+
+    <h2>주의사항</h2>
+    <p>
+      통계 분석은 과거 데이터를 정리한 것일 뿐, 미래의 당첨 번호를 예측하는 것이 아닙니다.
+      로또의 각 추첨은 완전히 독립적인 사건이며, 과거에 자주 나왔다고 해서 앞으로도 자주 나올 것이라는 보장은 없습니다.
+      통계는 재미있는 참고 자료로 활용하시되, 과도한 금액을 투자하지 않도록 주의해 주세요.
+    </p>
+
+    <nav class="footer-nav">
+      <h3>📄 다른 페이지 둘러보기</h3>
+      <ul>
+        <li><a href="/docs/about.html">서비스 소개</a></li>
+        <li><a href="/docs/how-it-works.html">알고리즘 설명</a></li>
+        <li><a href="/docs/saju-guide.html">사주 입문 가이드</a></li>
+        <li><a href="/docs/privacy.html">개인정보처리방침</a></li>
+        <li><a href="/docs/terms.html">이용약관</a></li>
+      </ul>
+    </nav>
+
+    <footer>
+      <p>&copy; 2025 로또 번호 예상기 | nick1148.site</p>
+    </footer>
+  </div>
+</body>
+</html>
