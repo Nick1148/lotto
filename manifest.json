@@ -1,0 +1,35 @@
+{
+  "name": "로또 번호 예상기 - 사주·이름·MBTI 행운번호",
+  "short_name": "로또예상기",
+  "description": "사주, 이름, MBTI, 통계 기반으로 나만의 로또 번호를 무료로 생성해보세요.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fff5f9",
+  "theme_color": "#fff5f9",
+  "orientation": "portrait",
+  "scope": "/",
+  "lang": "ko",
+  "categories": ["entertainment", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "사주 행운번호",
+      "short_name": "사주",
+      "url": "/?tab=saju",
+      "icons": [{ "src": "/icons/icon.svg", "sizes": "any" }]
+    }
+  ]
+}

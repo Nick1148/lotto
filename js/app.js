@@ -2,6 +2,37 @@
  * app.js - UI 이벤트 핸들러, 캐릭터 상태, confetti, localStorage
  */
 
+// ─── PWA 설치 프롬프트 ───────────────────────────────────────
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  showInstallBanner();
+});
+
+function showInstallBanner() {
+  if (document.getElementById('pwaInstallBanner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'pwaInstallBanner';
+  banner.className = 'pwa-install-banner';
+  banner.innerHTML = `
+    <span>📲 홈 화면에 추가하면 앱처럼 사용할 수 있어요!</span>
+    <button id="pwaInstallBtn" class="pwa-install-btn">설치</button>
+    <button id="pwaInstallClose" class="pwa-install-close">&times;</button>
+  `;
+  document.body.appendChild(banner);
+
+  document.getElementById('pwaInstallBtn').onclick = async () => {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    const { outcome } = await deferredInstallPrompt.userChoice;
+    if (outcome === 'accepted') trackEvent('pwa_install');
+    deferredInstallPrompt = null;
+    banner.remove();
+  };
+  document.getElementById('pwaInstallClose').onclick = () => banner.remove();
+}
+
 // ─── GA4 이벤트 추적 헬퍼 ───────────────────────────────────
 function trackEvent(eventName, params = {}) {
   if (typeof gtag !== 'undefined') {
@@ -494,6 +525,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   initModals();
   initDailyMission();
   initMbtiRanking();
+  initNumberFilter();
+  initWeeklyReport();
   renderLockedNumbers();
   handleDeepLink();
 
@@ -895,6 +928,9 @@ function showSpeechBubble(text) {
 
 // ─── 결과 표시 ────────────────────────────────────────────
 function displayResult(tabId, numbers, methodName, filtered = false) {
+  // 번호 필터 적용
+  numbers = applyNumberFilter(numbers);
+
   const ballsContainer = document.getElementById(`balls-${tabId}`);
   const freqContainer = document.getElementById(`freq-${tabId}`);
 
@@ -1245,6 +1281,255 @@ function renderAnalysisCard(tabId, numbers, filtered = false) {
 function isSmartFilterOn(tabId) {
   const checkbox = document.querySelector(`.smart-filter-checkbox[data-tab="${tabId}"]`);
   return checkbox ? checkbox.checked : false;
+}
+
+// ─── 번호 필터 시스템 ────────────────────────────────────────
+const numberFilter = {
+  excludes: new Set(),
+  includes: new Set(),
+  active: false,
+  paid: false
+};
+
+function openNumberFilter() {
+  // 클로버 체크 (첫 사용 시 🍀2 소모)
+  if (!numberFilter.paid) {
+    if (GameSystem.getBalance() < 2) {
+      showPremiumGate('번호 필터', 2);
+      return;
+    }
+  }
+
+  const modal = document.getElementById('numberFilterModal');
+  renderFilterBalls();
+  updateFilterSummary();
+  modal.style.display = 'flex';
+}
+
+function renderFilterBalls() {
+  const excludeGrid = document.getElementById('filterExcludeBalls');
+  const includeGrid = document.getElementById('filterIncludeBalls');
+  excludeGrid.innerHTML = '';
+  includeGrid.innerHTML = '';
+
+  for (let n = 1; n <= 45; n++) {
+    // 제외 볼
+    const exBall = document.createElement('div');
+    exBall.className = 'filter-ball' + (numberFilter.excludes.has(n) ? ' excluded' : '') + (numberFilter.includes.has(n) ? ' disabled' : '');
+    exBall.textContent = n;
+    exBall.onclick = () => toggleFilterBall('exclude', n);
+    excludeGrid.appendChild(exBall);
+
+    // 포함 볼
+    const inBall = document.createElement('div');
+    inBall.className = 'filter-ball' + (numberFilter.includes.has(n) ? ' included' : '') + (numberFilter.excludes.has(n) ? ' disabled' : '');
+    inBall.textContent = n;
+    inBall.onclick = () => toggleFilterBall('include', n);
+    includeGrid.appendChild(inBall);
+  }
+}
+
+function toggleFilterBall(type, num) {
+  if (type === 'exclude') {
+    if (numberFilter.includes.has(num)) return;
+    numberFilter.excludes.has(num) ? numberFilter.excludes.delete(num) : numberFilter.excludes.add(num);
+  } else {
+    if (numberFilter.excludes.has(num)) return;
+    if (!numberFilter.includes.has(num) && numberFilter.includes.size >= 5) {
+      showToast('포함 번호는 최대 5개까지 선택 가능해요');
+      return;
+    }
+    numberFilter.includes.has(num) ? numberFilter.includes.delete(num) : numberFilter.includes.add(num);
+  }
+
+  // 포함+제외 합쳐서 39개 이상 제외 불가 (최소 6개 남아야)
+  if (numberFilter.excludes.size > 39 - numberFilter.includes.size) {
+    numberFilter.excludes.delete(num);
+    showToast('번호가 부족해요! 최소 6개는 남겨야 합니다');
+    return;
+  }
+
+  renderFilterBalls();
+  updateFilterSummary();
+}
+
+function updateFilterSummary() {
+  const summary = document.getElementById('filterSummary');
+  const ex = numberFilter.excludes.size;
+  const inc = numberFilter.includes.size;
+  if (ex === 0 && inc === 0) {
+    summary.textContent = '필터 없음';
+  } else {
+    const parts = [];
+    if (ex > 0) parts.push(`🚫 ${ex}개 제외`);
+    if (inc > 0) parts.push(`✅ ${inc}개 포함`);
+    summary.textContent = parts.join(' · ') + ` (선택 가능: ${45 - ex}개)`;
+  }
+}
+
+function applyNumberFilter(numbers) {
+  if (!numberFilter.active) return numbers;
+
+  // 포함 번호는 반드시 포함
+  const mustInclude = [...numberFilter.includes];
+  const available = [];
+  for (let i = 1; i <= 45; i++) {
+    if (!numberFilter.excludes.has(i) && !numberFilter.includes.has(i)) {
+      available.push(i);
+    }
+  }
+
+  // 나머지를 랜덤으로 채움
+  const needed = 6 - mustInclude.length;
+  const shuffled = available.sort(() => Math.random() - 0.5);
+  const result = [...mustInclude, ...shuffled.slice(0, needed)];
+  return result.sort((a, b) => a - b);
+}
+
+// ─── 주간 행운 리포트 ────────────────────────────────────────
+function initWeeklyReport() {
+  const btn = document.getElementById('btn-weekly-report');
+  if (!btn) return;
+
+  btn.addEventListener('click', () => {
+    if (!GameSystem.spendClover(5)) {
+      showPremiumGate('주간 행운 리포트', 5);
+      return;
+    }
+    renderCloverBalance();
+    trackEvent('클로버_사용', { feature: '주간리포트', cost: 5 });
+    generateWeeklyReport();
+  });
+}
+
+function generateWeeklyReport() {
+  const container = document.getElementById('weeklyReportResult');
+  const btn = document.getElementById('btn-weekly-report');
+  btn.disabled = true;
+  btn.textContent = '분석 중...';
+
+  // 사주 데이터 가져오기
+  const birthDate = document.getElementById('heroBirthDate').value || '1990-01-01';
+  const birthHour = parseInt(document.getElementById('heroBirthHour').value) || -1;
+  const [year, month, day] = birthDate.split('-').map(Number);
+
+  // 6가지 방법으로 번호 생성
+  const methods = [
+    { name: '🎲 랜덤', fn: () => LottoGenerator.generateRandom() },
+    { name: '🔥 자주나온', fn: () => LottoGenerator.generateFrequent() },
+    { name: '❄️ 안나온', fn: () => LottoGenerator.generateRare() },
+    { name: '✨ 사주', fn: () => LottoGenerator.generateSaju(year, month, day, birthHour).numbers },
+    { name: '📛 이름', fn: () => LottoGenerator.generateName('행운').numbers },
+    { name: '🧠 MBTI', fn: () => { const types = ['INTJ','INTP','ENTJ','ENTP','INFJ','INFP','ENFJ','ENFP','ISTJ','ISFJ','ESTJ','ESFJ','ISTP','ISFP','ESTP','ESFP']; return LottoGenerator.generateMbti(types[Math.floor(Math.random()*16)]).numbers; }}
+  ];
+
+  const allNumbers = [];
+  let html = '';
+
+  methods.forEach(m => {
+    const nums = m.fn();
+    allNumbers.push(...nums);
+    const ballsHtml = nums.map(n => `<div class="ball ${getBallColorClass(n)}" style="width:28px;height:28px;font-size:0.65rem">${n}</div>`).join('');
+    html += `<div class="report-method-row">
+      <span class="report-method-name">${m.name}</span>
+      <div class="report-method-balls">${ballsHtml}</div>
+    </div>`;
+  });
+
+  // 빈도 분석 — 가장 자주 나온 Top 6
+  const freq = {};
+  allNumbers.forEach(n => { freq[n] = (freq[n] || 0) + 1; });
+  const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]);
+  const top6 = sorted.slice(0, 6).map(e => parseInt(e[0])).sort((a, b) => a - b);
+
+  const topBallsHtml = top6.map(n => `<div class="ball ${getBallColorClass(n)}" style="width:36px;height:36px;font-size:0.8rem">${n}</div>`).join('');
+
+  // 인사이트 생성
+  const maxFreq = sorted[0] ? sorted[0][1] : 0;
+  const hotNums = sorted.filter(e => e[1] === maxFreq).map(e => e[0]);
+  const evenCount = top6.filter(n => n % 2 === 0).length;
+  const oddCount = 6 - evenCount;
+  const sum = top6.reduce((a, b) => a + b, 0);
+
+  let insight = `6가지 방법 중 ${hotNums.join(', ')}번이 ${maxFreq}회로 가장 많이 등장했어요. `;
+  insight += `합계 ${sum}, 홀짝 비율 ${oddCount}:${evenCount}. `;
+  if (sum >= 100 && sum <= 175) {
+    insight += '합계가 적절한 범위에 있어 기대해볼 만해요! ✨';
+  } else {
+    insight += '다양한 번호가 골고루 분포되어 있어요. 🍀';
+  }
+
+  html += `
+    <div class="report-summary">
+      <div class="report-summary-title">🏆 종합 추천 번호 Top 6</div>
+      <div class="report-top-balls">${topBallsHtml}</div>
+      <div class="report-insight">${insight}</div>
+    </div>
+  `;
+
+  container.innerHTML = html;
+  container.style.display = 'block';
+  btn.disabled = false;
+  btn.innerHTML = '다시 분석하기 <span class="premium-cost">🍀5</span>';
+
+  // 기록 추가
+  addToHistory(top6, '📊 주간 리포트');
+  launchConfetti();
+}
+
+function initNumberFilter() {
+  document.getElementById('numberFilterClose').onclick = () => {
+    document.getElementById('numberFilterModal').style.display = 'none';
+  };
+
+  document.getElementById('filterResetBtn').onclick = () => {
+    numberFilter.excludes.clear();
+    numberFilter.includes.clear();
+    renderFilterBalls();
+    updateFilterSummary();
+  };
+
+  document.getElementById('filterApplyBtn').onclick = () => {
+    const hasFilter = numberFilter.excludes.size > 0 || numberFilter.includes.size > 0;
+
+    if (hasFilter && !numberFilter.paid) {
+      // 첫 활성화 시 클로버 소모
+      if (!GameSystem.spendClover(2)) {
+        showPremiumGate('번호 필터', 2);
+        return;
+      }
+      numberFilter.paid = true;
+      trackEvent('클로버_사용', { feature: '번호필터', cost: 2 });
+    }
+
+    numberFilter.active = hasFilter;
+    document.getElementById('numberFilterModal').style.display = 'none';
+
+    // 모든 필터 버튼 상태 업데이트
+    document.querySelectorAll('.number-filter-btn').forEach(btn => {
+      btn.classList.toggle('filter-active', numberFilter.active);
+      if (numberFilter.active) {
+        btn.innerHTML = `🎯 필터 ON <span class="premium-cost">${numberFilter.excludes.size + numberFilter.includes.size}개</span>`;
+      } else {
+        btn.innerHTML = '🎯 번호 필터 <span class="premium-cost">🍀2</span>';
+      }
+    });
+
+    if (hasFilter) {
+      showToast(`번호 필터 적용됨! (제외 ${numberFilter.excludes.size}개, 포함 ${numberFilter.includes.size}개)`);
+    } else {
+      showToast('번호 필터 해제됨');
+    }
+
+    renderCloverBalance();
+  };
+
+  // 모달 배경 클릭으로 닫기
+  document.getElementById('numberFilterModal').onclick = (e) => {
+    if (e.target.id === 'numberFilterModal') {
+      document.getElementById('numberFilterModal').style.display = 'none';
+    }
+  };
 }
 
 // ─── 🔥 지옥 이스터에그 ──────────────────────────────────────

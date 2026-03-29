@@ -33,6 +33,11 @@
   <!-- Google Search Console 소유확인 -->
   <meta name="google-site-verification" content="0VSTVxEYX2c5xtIdBosxWkBsZUphxc7ucI1GJogFKz4" />
 
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+  <link rel="apple-touch-icon" href="/icons/icon.svg">
+
   <!-- 검색엔진 -->
   <link rel="canonical" href="https://nick1148.site">
 
@@ -262,6 +267,7 @@
             <span class="smart-filter-slider"></span>
           </label>
           <span class="smart-filter-label">📊 통계 필터</span>
+          <button class="number-filter-btn" onclick="openNumberFilter()">🎯 번호 필터 <span class="premium-cost">🍀2</span></button>
         </div>
         <button class="generate-btn saju-hero-btn" id="btn-saju-hero">
           <span class="btn-icon">✨</span>
@@ -280,6 +286,20 @@
         <div class="disclaimer saju-hero-disclaimer">
           ⚠️ 사주 기반 번호는 재미 목적이며, 당첨을 보장하지 않습니다.
         </div>
+      </div>
+    </section>
+
+    <!-- 주간 행운 리포트 -->
+    <section class="weekly-report-card" id="weeklyReportSection">
+      <div class="weekly-report-inner">
+        <div class="weekly-report-badge">📊 PREMIUM</div>
+        <h3 class="weekly-report-title">주간 행운 리포트</h3>
+        <p class="weekly-report-desc">6가지 방법 종합 분석 — 가장 자주 나온 번호 Top 6</p>
+        <button class="weekly-report-btn" id="btn-weekly-report">
+          리포트 생성하기
+          <span class="premium-cost">🍀5</span>
+        </button>
+        <div class="weekly-report-result" id="weeklyReportResult" style="display:none"></div>
       </div>
     </section>
 
@@ -324,6 +344,7 @@
             <span class="smart-filter-slider"></span>
           </label>
           <span class="smart-filter-label">📊 통계 필터</span>
+          <button class="number-filter-btn" onclick="openNumberFilter()">🎯 번호 필터 <span class="premium-cost">🍀2</span></button>
         </div>
         <div class="btn-group">
           <button class="generate-btn" id="btn-random">
@@ -359,6 +380,7 @@
             <span class="smart-filter-slider"></span>
           </label>
           <span class="smart-filter-label">📊 통계 필터</span>
+          <button class="number-filter-btn" onclick="openNumberFilter()">🎯 번호 필터 <span class="premium-cost">🍀2</span></button>
         </div>
         <div class="btn-group">
           <button class="generate-btn" id="btn-frequent">
@@ -398,6 +420,7 @@
             <span class="smart-filter-slider"></span>
           </label>
           <span class="smart-filter-label">📊 통계 필터</span>
+          <button class="number-filter-btn" onclick="openNumberFilter()">🎯 번호 필터 <span class="premium-cost">🍀2</span></button>
         </div>
         <div class="btn-group">
           <button class="generate-btn" id="btn-rare">
@@ -450,6 +473,7 @@
             <span class="smart-filter-slider"></span>
           </label>
           <span class="smart-filter-label">📊 통계 필터</span>
+          <button class="number-filter-btn" onclick="openNumberFilter()">🎯 번호 필터 <span class="premium-cost">🍀2</span></button>
         </div>
 
         <button class="generate-btn name-btn" id="btn-name">
@@ -516,6 +540,7 @@
             <span class="smart-filter-slider"></span>
           </label>
           <span class="smart-filter-label">📊 통계 필터</span>
+          <button class="number-filter-btn" onclick="openNumberFilter()">🎯 번호 필터 <span class="premium-cost">🍀2</span></button>
         </div>
 
         <button class="generate-btn mbti-btn" id="btn-mbti">
@@ -734,6 +759,37 @@
     </div>
   </div>
 
+  <!-- 번호 필터 모달 -->
+  <div class="modal-overlay" id="numberFilterModal" style="display:none">
+    <div class="modal-sheet modal-large number-filter-sheet">
+      <div class="modal-close" id="numberFilterClose">&times;</div>
+      <div class="number-filter-header">
+        <div class="premium-badge">🎯 FILTER</div>
+        <h2 class="number-filter-title">번호 필터</h2>
+        <p class="number-filter-desc">제외하거나 반드시 포함할 번호를 선택하세요</p>
+      </div>
+      <div class="number-filter-body">
+        <div class="filter-section">
+          <h3 class="filter-section-title">🚫 제외할 번호</h3>
+          <p class="filter-section-hint">선택한 번호는 생성에서 제외됩니다</p>
+          <div class="filter-balls-grid" id="filterExcludeBalls"></div>
+        </div>
+        <div class="filter-section">
+          <h3 class="filter-section-title">✅ 반드시 포함할 번호</h3>
+          <p class="filter-section-hint">선택한 번호가 반드시 포함됩니다 (최대 5개)</p>
+          <div class="filter-balls-grid" id="filterIncludeBalls"></div>
+        </div>
+        <div class="filter-summary" id="filterSummary">
+          필터 없음
+        </div>
+      </div>
+      <div class="number-filter-actions">
+        <button class="filter-reset-btn" id="filterResetBtn">초기화</button>
+        <button class="filter-apply-btn" id="filterApplyBtn">적용하기</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 로그인 모달 -->
   <div class="modal-overlay" id="loginModal" style="display:none">
     <div class="modal-sheet login-sheet">
@@ -809,5 +865,12 @@
 
   <!-- Kakao SDK -->
   <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js"></script>
+
+  <!-- Service Worker 등록 -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+  </script>
 </body>
 </html>
