@@ -63,11 +63,8 @@ const MbtiGenerator = (() => {
    * 날짜 기반 seed 생성
    */
   function dateSeed() {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = now.getMonth() + 1;
-    const d = now.getDate();
-    return y * 10000 + m * 100 + d;
+    // 한국 날짜 기준 (해외 시간대에서도 한국 날짜에 맞춰 바뀜)
+    return KST.dateSeed();
   }
 
   /**
@@ -130,16 +127,17 @@ const MbtiGenerator = (() => {
    * @returns {{ numbers: number[], mbtiInfo: Object }}
    */
   function getMbtiNumbers(mbtiType) {
-    const type = mbtiType.toUpperCase();
-    const profile = PROFILES[type] || PROFILES['ENFP'];
+    // 잘못된 입력(빈 값, 4글자 아님 등)은 기본 유형으로 보정
+    let type = String(mbtiType || '').toUpperCase();
+    if (!PROFILES[type]) type = 'ENFP';
+    const profile = PROFILES[type];
     const weights = calcWeights(type);
 
     // MBTI seed + 날짜 seed 혼합 → 매일 다른 번호
     const seed = mbtiSeed(type) * 997 + dateSeed() * 31;
     const numbers = selectNumbers(weights, seed);
 
-    const now = new Date();
-    const dateStr = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')}`;
+    const dateStr = KST.today().replace(/-/g, '.');
 
     return {
       numbers,

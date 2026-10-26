@@ -192,8 +192,7 @@ const ChemistryGenerator = (() => {
     const finalScore = Math.min(95, Math.max(60, score + Math.floor((elemCompat.score - 12) / 2)));
 
     // 공동 행운 번호 생성 (날짜 + 이름 조합)
-    const now = new Date();
-    const dateSeed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+    const dateSeed = KST.dateSeed(); // 한국 날짜 기준
     const numberSeed = combinedSeed + dateSeed;
 
     const lcg = createLCG(numberSeed);

@@ -67,17 +67,18 @@ const SajuCalculator = (() => {
 
   /**
    * 일주(日柱) 계산
-   * 갑자일 기준: 1900-01-01 = 갑술일 (간지 41번째)
+   * 기준일: 2000-01-01 = 무오일(戊午日) (간 4=무, 지 6=오)
+   *   검증: 1900-01-01 = 갑술일(甲戌, 60갑자 10번째) + 36524일 → 54번째 = 무오(戊午)
+   * (이전 코드는 기준을 '갑신일'로 잘못 잡아 모든 일주가 틀렸음)
    */
   function calcDayPillar(year, month, day) {
-    // 기준일: 2000-01-01 = 갑신일 (간 0=갑, 지 8=신 → 인덱스 0,8)
-    const base = new Date(2000, 0, 1);
-    const target = new Date(year, month - 1, day);
+    // UTC 로 일수 차를 계산해 기기 시간대/서머타임 영향 제거
+    const base = Date.UTC(2000, 0, 1);
+    const target = Date.UTC(year, month - 1, day);
     const diffDays = Math.round((target - base) / (1000 * 60 * 60 * 24));
 
-    // 기준: 2000-01-01 갑신일 → 간=갑(0), 지=신(8)
-    const ganIdx = ((diffDays % 10) + 10) % 10;
-    const jiIdx = ((diffDays + 8) % 12 + 12) % 12;
+    const ganIdx = (((diffDays + 4) % 10) + 10) % 10;
+    const jiIdx = (((diffDays + 6) % 12) + 12) % 12;
 
     return { gan: CHEONGAN[ganIdx], ji: JIJI[jiIdx] };
   }

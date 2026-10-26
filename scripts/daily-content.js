@@ -87,14 +87,16 @@ function getDailyFortune(dateStr) {
 }
 
 // ─── 콘텐츠 생성 ─────────────────────────────────────────
-function generateContent() {
-  const today = new Date();
+function generateContent(now = new Date()) {
+  // GitHub Actions 는 UTC 23:00(= KST 08:00)에 실행되므로 반드시 KST 기준 날짜를 써야 한다.
+  // (기존 toISOString/getDay 는 UTC 기준이라 '어제' 날짜·요일로 발송되고 토요일 이벤트 안내가 일요일에 나갔음)
+  const today = new Date(now.getTime() + 9 * 60 * 60 * 1000); // getUTC* 로 읽으면 KST 벽시계 값
   const dateStr = today.toISOString().slice(0, 10);
   const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
-  const dayName = dayNames[today.getDay()];
+  const dayName = dayNames[today.getUTCDay()];
 
-  const month = today.getMonth() + 1;
-  const date = today.getDate();
+  const month = today.getUTCMonth() + 1;
+  const date = today.getUTCDate();
 
   const seed = hashDate(dateStr);
   const numbers = generateLuckyNumbers(seed);
@@ -103,7 +105,7 @@ function generateContent() {
 
   const numbersStr = numbers.map(n => String(n).padStart(2, '0')).join(' ');
   const top3Mbti = mbtiRanking.slice(0, 3);
-  const isSaturday = today.getDay() === 6;
+  const isSaturday = today.getUTCDay() === 6;
 
   return { dateStr, month, date, dayName, numbers, numbersStr, top3Mbti, mbtiRanking, fortune, isSaturday };
 }
@@ -165,6 +167,7 @@ function httpRequest(options, body) {
       });
     });
     req.on('error', reject);
+    req.setTimeout(15000, () => req.destroy(new Error('request timeout')));
     if (body) req.write(body);
     req.end();
   });
@@ -176,7 +179,7 @@ async function sendTelegram(message) {
 
   if (!token || !chatId) {
     console.log('⚠️ Telegram 환경변수 미설정 — 스킵');
-    return false;
+    return null;
   }
 
   const body = JSON.stringify({
@@ -218,7 +221,7 @@ async function postTweet(text) {
 
   if (!apiKey || !apiSecret || !accessToken || !accessSecret) {
     console.log('⚠️ X(Twitter) 환경변수 미설정 — 스킵');
-    return false;
+    return null;
   }
 
   const url = 'https://api.twitter.com/2/tweets';
@@ -274,19 +277,27 @@ async function main() {
   const telegramMsg = buildTelegramMessage(data);
   console.log('\n--- Telegram 메시지 ---');
   console.log(telegramMsg);
-  await sendTelegram(telegramMsg);
+  const telegramOk = await sendTelegram(telegramMsg);
 
   // X (Twitter)
   const tweet = buildTweet(data);
   console.log('\n--- X 트윗 ---');
   console.log(tweet);
   console.log(`${tweet.length}/280자`);
-  await postTweet(tweet);
+  const tweetOk = await postTweet(tweet);
 
+  // 설정된 채널 발송이 실패하면 워크플로가 실패로 표시되도록 (이전에는 실패해도 성공 처리됨)
+  if (telegramOk === false || tweetOk === false) {
+    throw new Error('일부 채널 발송 실패');
+  }
   console.log('\n✅ 일일 콘텐츠 발송 완료');
 }
 
-main().catch(err => {
-  console.error('❌ 오류:', err);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch(err => {
+    console.error('❌ 오류:', err);
+    process.exit(1);
+  });
+}
+
+module.exports = { generateContent, buildTweet, buildTelegramMessage };

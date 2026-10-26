@@ -1,0 +1,15 @@
+{
+  "name": "lotto-predictor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "로또 번호 예상기 (정적 웹앱) — 빌드 단계 없음",
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "check": "node tests/check-syntax.js",
+    "test": "node tests/check-syntax.js && node --test tests/unit/*.test.js",
+    "test:e2e": "node tests/e2e/smoke.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

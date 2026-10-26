@@ -5,7 +5,8 @@
 
 const GameSystem = (() => {
   const STORAGE_KEY = 'lotto_game';
-  const TODAY = () => new Date().toISOString().slice(0, 10);
+  // 한국 시간(KST) 기준 날짜 — UTC 기준이면 KST 00~09시에 '어제'로 처리되는 문제가 있었음
+  const TODAY = () => KST.today();
 
   // ─── 기본 상태 ──────────────────────────────────────────
   const DEFAULT_STATE = {
@@ -44,6 +45,41 @@ const GameSystem = (() => {
   };
 
   let state = null;
+
+  // DEFAULT_STATE 는 배열/객체를 포함하므로 반드시 깊은 복사로 사용 (공유 참조 오염 방지)
+  function freshDefault() {
+    return JSON.parse(JSON.stringify(DEFAULT_STATE));
+  }
+
+  const isNonNegNum = (v) => typeof v === 'number' && Number.isFinite(v) && v >= 0;
+
+  /**
+   * 저장소/클라우드에서 읽은 상태를 기본값과 병합하고 타입을 검증한다.
+   * 손상되었거나 조작된 값(문자열 잔액, 배열이 아닌 목록 등)으로 앱이 깨지지 않게 한다.
+   */
+  function sanitizeState(raw) {
+    const base = freshDefault();
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return base;
+    const s = { ...base, ...raw };
+    for (const k of ['balance', 'xp', 'streak', 'longestStreak', 'totalEarned', 'totalSpent',
+      'totalShares', 'generatedTodayCount', 'totalGenerated', 'referralCount']) {
+      if (!isNonNegNum(s[k])) s[k] = base[k];
+    }
+    if (s.streakShield !== undefined && !isNonNegNum(s.streakShield)) s.streakShield = 0;
+    if (s._mbtiTypes !== undefined && !Array.isArray(s._mbtiTypes)) s._mbtiTypes = [];
+    for (const k of ['triedMethods', '_todayMethods', 'bonusMissions', 'bonusMissionsDone']) {
+      if (!Array.isArray(s[k])) s[k] = [];
+    }
+    if (!Array.isArray(s.lockedNumbers)) s.lockedNumbers = [];
+    s.lockedNumbers = s.lockedNumbers.filter(item =>
+      item && Array.isArray(item.numbers) && item.numbers.length === 6 &&
+      item.numbers.every(n => Number.isInteger(n) && n >= 1 && n <= 45)
+    ).slice(0, 5);
+    for (const k of ['achievements', 'shareCountToday', 'freePremiumUsed']) {
+      if (!s[k] || typeof s[k] !== 'object' || Array.isArray(s[k])) s[k] = base[k];
+    }
+    return s;
+  }
 
   // ─── 레벨 정의 ──────────────────────────────────────────
   const LEVELS = [
@@ -102,13 +138,9 @@ const GameSystem = (() => {
   function load() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        state = { ...DEFAULT_STATE, ...JSON.parse(saved) };
-      } else {
-        state = { ...DEFAULT_STATE };
-      }
+      state = saved ? sanitizeState(JSON.parse(saved)) : freshDefault();
     } catch (e) {
-      state = { ...DEFAULT_STATE };
+      state = freshDefault();
     }
     resetDailyIfNeeded();
     initDailyMission();
@@ -128,12 +160,14 @@ const GameSystem = (() => {
 
   // ─── 클라우드 연동 ────────────────────────────────────
   function getState() {
-    return state ? { ...state } : { ...DEFAULT_STATE };
+    return JSON.parse(JSON.stringify(state || DEFAULT_STATE));
   }
 
   function loadFromCloud(cloudData) {
     if (!cloudData) return;
-    state = { ...DEFAULT_STATE, ...cloudData };
+    state = sanitizeState(cloudData);
+    resetDailyIfNeeded();
+    initDailyMission();
     // localStorage에만 반영 (클라우드 재싱크 방지)
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -189,9 +223,7 @@ const GameSystem = (() => {
     if (state.lastCheckIn === today) return { rewarded: false, alreadyDone: true, streak: state.streak };
 
     // 스트릭 계산
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().slice(0, 10);
+    const yesterdayStr = KST.addDays(today, -1);
 
     if (state.lastCheckIn === yesterdayStr) {
       state.streak += 1;
@@ -423,18 +455,24 @@ const GameSystem = (() => {
   function getCheckInCalendar() {
     // 최근 7일 출석 여부 (간단 근사: streak 기반)
     const days = [];
-    const today = new Date();
+    const today = TODAY();
+    const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+    // 스트릭은 마지막 출석일 기준으로 연속이므로, 마지막 출석일로부터 streak 일 이내만 체크 표시
+    const last = state && state.lastCheckIn;
     for (let i = 6; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().slice(0, 10);
-      const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
-      const checkedIn = state && state.lastCheckIn && i < state.streak;
+      const dateStr = KST.addDays(today, -i);
+      let checkedIn = false;
+      if (last && dateStr <= last) {
+        for (let k = 0; k < (state.streak || 0); k++) {
+          if (KST.addDays(last, -k) === dateStr) { checkedIn = true; break; }
+        }
+      }
       days.push({
         date: dateStr,
-        day: dayNames[d.getDay()],
-        dateNum: d.getDate(),
-        checkedIn: i === 0 ? (state && state.lastCheckIn === TODAY()) : checkedIn
+        day: dayNames[KST.dayOfWeek(dateStr)],
+        dateNum: Number(dateStr.slice(8)),
+        isToday: i === 0,
+        checkedIn
       });
     }
     return days;
@@ -633,8 +671,7 @@ const GameSystem = (() => {
   // ─── 스트릭 보호권 ──────────────────────────────────────
   function buyStreakShield() {
     if (!state) return false;
-    if (!canAfford(5)) return false;
-    spendClovers(5);
+    if (!spendClovers(5, 'streak_shield')) return false;
     state.streakShield = (state.streakShield || 0) + 1;
     save();
     return true;
@@ -697,26 +734,20 @@ const GameSystem = (() => {
     const message = messages[next() % messages.length];
 
     // 현재 럭키타임인지
-    const now = new Date();
-    const currentHour = now.getHours();
+    // 럭키타임은 한국 시간 기준
+    const currentHour = KST.parts().hours;
     const isLuckyTime = currentHour >= luckyHourStart && currentHour < luckyHourEnd;
 
-    // 럭키타임까지 남은 시간(초)
+    // 럭키타임까지(또는 종료까지) 남은 시간(초), 이미 지났으면 -1
     let luckyTimeRemaining = 0;
     if (!isLuckyTime) {
-      let targetHour = luckyHourStart;
       if (currentHour >= luckyHourEnd) {
-        // 이미 지남 → 내일
         luckyTimeRemaining = -1;
       } else {
-        const target = new Date(now);
-        target.setHours(targetHour, 0, 0, 0);
-        luckyTimeRemaining = Math.max(0, Math.floor((target - now) / 1000));
+        luckyTimeRemaining = Math.max(0, Math.floor(KST.msUntilHour(luckyHourStart) / 1000));
       }
     } else {
-      const end = new Date(now);
-      end.setHours(luckyHourEnd, 0, 0, 0);
-      luckyTimeRemaining = Math.max(0, Math.floor((end - now) / 1000));
+      luckyTimeRemaining = Math.max(0, Math.floor(KST.msUntilHour(luckyHourEnd) / 1000));
     }
 
     return {
@@ -727,9 +758,7 @@ const GameSystem = (() => {
 
   // ─── 이벤트 시스템 ─────────────────────────────────────────
   function getActiveEvent() {
-    const now = new Date();
-    const day = now.getDate();
-    const dayOfWeek = now.getDay(); // 0=일, 6=토
+    const { day, dayOfWeek } = KST.parts(); // 한국 날짜 기준, 0=일, 6=토
 
     if (dayOfWeek === 6) {
       return { id: 'saturday', name: '🎰 추첨일 이벤트', desc: '오늘 모든 보상 2배!', multiplier: 2, color: '#ff6b6b' };

@@ -17,7 +17,7 @@
   --color-lemon: #ffd966;
   --color-card: #ffffff;
   --color-text: #4a3a5c;
-  --color-text-muted: #8a7a9c;
+  --color-text-muted: #7a6a8e; /* 대비 4.5:1 이상 확보 (기존 #8a7a9c 는 3.9:1) */
   --color-text-light: #b0a0c0;
   --color-border: rgba(255, 150, 200, 0.2);
 
@@ -4175,4 +4175,79 @@ body {
 }
 .footer-links a:hover {
   text-decoration: underline;
+}
+
+
+/* ===========================
+   점검 수정 (2026-10): 접근성 · 모바일
+   =========================== */
+/* 390px 등 좁은 화면에서 절대배치 배지(premium-cost)로 인한 가로 스크롤 방지 */
+html, body {
+  overflow-x: hidden;
+}
+@supports (overflow: clip) {
+  html, body { overflow-x: clip; }
+}
+
+/* 스크린리더 전용 텍스트 */
+.sr-only {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* div → button 으로 바꾼 요소의 기본 버튼 스타일 제거 */
+button.modal-close {
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  padding: 0;
+}
+button.login-skip {
+  border: none;
+  background: none;
+  font-family: inherit;
+  display: block;
+  margin: 0 auto;
+  padding: 8px 12px;
+}
+button.filter-ball {
+  font-family: inherit;
+  color: var(--color-text);
+  padding: 0;
+}
+button.filter-ball:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* 키보드 포커스 표시 */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible {
+  outline: 3px solid #7b4dff;
+  outline-offset: 2px;
+}
+
+/* 프리미엄 상세 해석 줄바꿈 유지 */
+.premium-section-card p {
+  white-space: pre-line;
+}
+
+/* 애니메이션 최소화 설정 존중 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .floating-decorations, .btn-shimmer { display: none; }
 }

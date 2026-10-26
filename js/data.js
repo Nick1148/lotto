@@ -34,18 +34,26 @@ const DataManager = (() => {
    */
   async function loadHistory() {
     try {
-      const response = await fetch('data/lotto_history.json');
+      // 회차 데이터는 매주 갱신되므로 HTTP 캐시 대신 재검증 요청
+      const response = await fetch('data/lotto_history.json', { cache: 'no-cache' });
       if (!response.ok) throw new Error('파일 로드 실패');
 
       const data = await response.json();
 
-      if (!Array.isArray(data) || data.length === 0) {
-        console.warn('[DataManager] JSON 파일이 비어있음. 폴백 데이터 사용.');
+      const valid = Array.isArray(data) ? data.filter(isValidDraw) : [];
+      if (valid.length === 0) {
+        console.warn('[DataManager] 유효한 회차 데이터가 없음. 폴백 데이터 사용.');
         _useFallback();
         return;
       }
+      if (valid.length !== data.length) {
+        console.warn(`[DataManager] 잘못된 회차 ${data.length - valid.length}건 제외`);
+      }
 
-      _history = data;
+      // 회차 순 정렬 + 중복 회차 제거 (최신 회차 판단이 파일 순서에 의존하지 않도록)
+      const byNo = new Map();
+      valid.forEach(d => byNo.set(d.drwNo, d));
+      _history = [...byNo.values()].sort((a, b) => a.drwNo - b.drwNo);
       _buildFrequency();
       _isLoaded = true;
       _isUsingFallback = false;
@@ -54,6 +62,18 @@ const DataManager = (() => {
       console.warn('[DataManager] 데이터 로드 실패, 폴백 사용:', err.message);
       _useFallback();
     }
+  }
+
+  /**
+   * 회차 데이터 1건 검증: 1~45 범위의 서로 다른 정수 6개 + 회차 번호
+   */
+  function isValidDraw(d) {
+    if (!d || !Number.isInteger(d.drwNo) || d.drwNo < 1) return false;
+    if (!Array.isArray(d.numbers) || d.numbers.length !== 6) return false;
+    if (!d.numbers.every(n => Number.isInteger(n) && n >= 1 && n <= 45)) return false;
+    if (new Set(d.numbers).size !== 6) return false;
+    if (d.bonusNo != null && !(Number.isInteger(d.bonusNo) && d.bonusNo >= 1 && d.bonusNo <= 45)) return false;
+    return true;
   }
 
   /**
@@ -136,7 +156,7 @@ const DataManager = (() => {
    */
   function getMaxCount() {
     const freq = getFrequency();
-    return Math.max(...freq.values());
+    return freq.size ? Math.max(...freq.values()) : 0;
   }
 
   /**
@@ -203,6 +223,7 @@ const DataManager = (() => {
     getStatus,
     getHistoricalSumDistribution,
     getHistoricalOddEvenDistribution,
-    getNumberGap
+    getNumberGap,
+    isValidDraw
   };
 })();

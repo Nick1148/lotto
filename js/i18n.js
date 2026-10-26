@@ -17,7 +17,8 @@ const I18n = (() => {
     if (urlLang && (urlLang === 'ko' || urlLang === 'en')) return urlLang;
 
     // 2. localStorage
-    const saved = localStorage.getItem('lotto_lang');
+    let saved = null;
+    try { saved = localStorage.getItem('lotto_lang'); } catch (e) { /* 저장소 차단 환경 */ }
     if (saved && (saved === 'ko' || saved === 'en')) return saved;
 
     // 3. 브라우저 언어
@@ -44,7 +45,7 @@ const I18n = (() => {
   async function init() {
     currentLang = detectLang();
     translations = await loadTranslations(currentLang);
-    localStorage.setItem('lotto_lang', currentLang);
+    try { localStorage.setItem('lotto_lang', currentLang); } catch (e) { /* ignore */ }
     document.documentElement.lang = currentLang;
     ready = true;
     translateDOM();
@@ -108,10 +109,11 @@ const I18n = (() => {
 
   // ─── 언어 전환 ────────────────────────────────────────────
   async function switchLang(lang) {
+    if (lang !== 'ko' && lang !== 'en') return;
     if (lang === currentLang) return;
     currentLang = lang;
     translations = await loadTranslations(lang);
-    localStorage.setItem('lotto_lang', lang);
+    try { localStorage.setItem('lotto_lang', lang); } catch (e) { /* ignore */ }
     document.documentElement.lang = lang;
     translateDOM();
   }

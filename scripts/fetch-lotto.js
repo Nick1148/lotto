@@ -39,10 +39,10 @@ async function fetchFromPrimary(drwNo) {
   const data = JSON.parse(raw);
   if (data.returnValue === 'fail') return null;
   return {
-    drwNo: data.drwNo,
+    drwNo: Number(data.drwNo),
     drwNoDate: data.drwNoDate,
-    numbers: [data.drwtNo1, data.drwtNo2, data.drwtNo3, data.drwtNo4, data.drwtNo5, data.drwtNo6].sort((a, b) => a - b),
-    bonusNo: data.bnusNo
+    numbers: [data.drwtNo1, data.drwtNo2, data.drwtNo3, data.drwtNo4, data.drwtNo5, data.drwtNo6].map(Number).sort((a, b) => a - b),
+    bonusNo: Number(data.bnusNo)
   };
 }
 
@@ -51,10 +51,10 @@ async function fetchFromBackup(drwNo) {
   const data = JSON.parse(raw);
   if (!data || !data.numbers || data.numbers.length < 6) return null;
   return {
-    drwNo: data.round || drwNo,
+    drwNo: Number(data.round || drwNo),
     drwNoDate: data.date || '',
-    numbers: data.numbers.slice(0, 6).sort((a, b) => a - b),
-    bonusNo: data.bonus || data.numbers[6] || null
+    numbers: data.numbers.slice(0, 6).map(Number).sort((a, b) => a - b),
+    bonusNo: Number(data.bonus || data.numbers[6]) || null
   };
 }
 
@@ -84,9 +84,23 @@ async function fetchDraw(drwNo) {
   return undefined;
 }
 
+// 저장 전 검증: 잘못된 데이터가 커밋되면 사이트 통계가 오염됨
+function validateDraw(d, expectedNo) {
+  if (!d || Number(d.drwNo) !== expectedNo) return 'drwNo mismatch (' + (d && d.drwNo) + ')';
+  const nums = d.numbers;
+  if (!Array.isArray(nums) || nums.length !== 6) return 'numbers length';
+  if (!nums.every(n => Number.isInteger(n) && n >= 1 && n <= 45)) return 'number out of range';
+  if (new Set(nums).size !== 6) return 'duplicate numbers';
+  if (!(Number.isInteger(d.bonusNo) && d.bonusNo >= 1 && d.bonusNo <= 45)) return 'bonus out of range';
+  if (nums.includes(d.bonusNo)) return 'bonus duplicates main number';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d.drwNoDate || '')) return 'bad date';
+  return null;
+}
+
 async function main() {
   const history = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-  const lastDrwNo = history[history.length - 1].drwNo;
+  if (!Array.isArray(history) || history.length === 0) throw new Error('history file is empty');
+  const lastDrwNo = Math.max(...history.map(d => d.drwNo));
   console.log('current last: ' + lastDrwNo + '\n');
 
   let added = 0;
@@ -97,8 +111,9 @@ async function main() {
     const result = await fetchDraw(drwNo);
     if (result === null) { console.log('  -> not yet drawn\n'); break; }
     if (result === undefined) { console.log('  -> API failed\n'); break; }
-    if (result.numbers.length !== 6 || result.numbers.some(n => n < 1 || n > 45)) {
-      console.log('  -> invalid data\n'); break;
+    const problem = validateDraw(result, drwNo);
+    if (problem) {
+      console.log('  -> invalid data: ' + problem + '\n'); break;
     }
     history.push(result);
     added++;
@@ -115,4 +130,8 @@ async function main() {
   }
 }
 
-main().catch(e => { console.error(e); process.exit(1); });
+if (require.main === module) {
+  main().catch(e => { console.error(e); process.exit(1); });
+}
+
+module.exports = { validateDraw };

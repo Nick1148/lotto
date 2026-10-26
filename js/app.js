@@ -33,6 +33,16 @@ function showInstallBanner() {
   document.getElementById('pwaInstallClose').onclick = () => banner.remove();
 }
 
+// ─── HTML 이스케이프 (사용자 입력/저장 데이터를 innerHTML 에 넣을 때 필수) ───
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // ─── GA4 이벤트 추적 헬퍼 ───────────────────────────────────
 function trackEvent(eventName, params = {}) {
   if (typeof gtag !== 'undefined') {
@@ -264,7 +274,7 @@ function showCheckinModal(result) {
   calendar.innerHTML = days.map(d => `
     <div class="checkin-day">
       <span>${d.day}</span>
-      <div class="checkin-day-circle ${d.checkedIn ? 'checked' : ''} ${d.date === new Date().toISOString().slice(0,10) ? 'today' : ''}">
+      <div class="checkin-day-circle ${d.checkedIn ? 'checked' : ''} ${d.isToday ? 'today' : ''}">
         ${d.checkedIn ? '✓' : d.dateNum}
       </div>
     </div>
@@ -365,7 +375,7 @@ function initModals() {
 
   document.getElementById('premiumCopy')?.addEventListener('click', () => {
     const shareText = '🍀 로또 번호 예상기 - 사주·이름·MBTI로 행운번호 추천!\n👉 https://nick1148.site';
-    navigator.clipboard.writeText(shareText).then(() => {
+    copyText(shareText).then(() => {
       rewardShare('copy');
       document.getElementById('premiumBalance').textContent = `현재 🍀 ${GameSystem.getBalance()} 클로버`;
       const spendBtn = document.getElementById('premiumSpend');
@@ -388,6 +398,8 @@ function initModals() {
     document.getElementById('mbtiRankingModal').style.display = 'none';
   });
 
+  initModalAccessibility();
+
   // 오버레이 클릭으로 닫기
   document.querySelectorAll('.modal-overlay').forEach(overlay => {
     overlay.addEventListener('click', (e) => {
@@ -396,6 +408,45 @@ function initModals() {
         pendingPremiumCallback = null;
       }
     });
+  });
+}
+
+// ─── 모달 접근성: 열릴 때 포커스 이동, Esc 로 닫기, 닫히면 원래 위치로 포커스 복귀 ───
+function closeModal(overlay) {
+  overlay.style.display = 'none';
+  if (overlay.id === 'premiumModal') pendingPremiumCallback = null;
+  if (overlay.id === 'loginModal' && typeof AuthSystem !== 'undefined') AuthSystem.hideLoginModal();
+}
+
+function initModalAccessibility() {
+  const lastFocus = new WeakMap();
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    const heading = overlay.querySelector('h2, .modal-title, .premium-title, .checkin-title');
+    if (heading) {
+      if (!heading.id) heading.id = overlay.id + 'Title';
+      overlay.setAttribute('aria-labelledby', heading.id);
+    }
+    // style.display 변경을 감지해 포커스 관리 (기존 코드가 display 로 모달을 여닫음)
+    new MutationObserver(() => {
+      const open = overlay.style.display !== 'none';
+      if (open && !lastFocus.has(overlay)) {
+        lastFocus.set(overlay, document.activeElement);
+        const focusable = overlay.querySelector('.modal-close, button, [href], input, select, [tabindex]:not([tabindex="-1"])');
+        if (focusable) setTimeout(() => focusable.focus(), 0);
+      } else if (!open && lastFocus.has(overlay)) {
+        const prev = lastFocus.get(overlay);
+        lastFocus.delete(overlay);
+        if (prev && typeof prev.focus === 'function' && document.contains(prev)) prev.focus();
+      }
+    }).observe(overlay, { attributes: true, attributeFilter: ['style'] });
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const open = [...document.querySelectorAll('.modal-overlay')].filter(o => o.style.display !== 'none');
+    if (open.length) closeModal(open[open.length - 1]);
   });
 }
 
@@ -495,14 +546,14 @@ function renderLockedNumbers() {
       <div class="locked-item-balls">
         ${item.numbers.map(n => `<div class="ball ball-sm ${getBallColorClass(n)}">${n}</div>`).join('')}
       </div>
-      <span class="locked-item-date">${item.date}</span>
-      <button class="locked-item-remove" data-id="${item.id}" title="삭제">🗑️</button>
+      <span class="locked-item-date">${escapeHtml(item.date)}</span>
+      <button class="locked-item-remove" data-id="${escapeHtml(item.id)}" title="삭제" aria-label="잠금 번호 삭제">🗑️</button>
     </div>
   `).join('');
 
   list.querySelectorAll('.locked-item-remove').forEach(btn => {
     btn.addEventListener('click', () => {
-      GameSystem.unlockNumbers(parseInt(btn.dataset.id));
+      GameSystem.unlockNumbers(Number(btn.dataset.id));
       renderLockedNumbers();
     });
   });
@@ -517,14 +568,19 @@ function handleDeepLink() {
     handleReferral(refCode);
   }
 
-  // 궁합 딥링크
-  const chemName = params.get('chem');
-  const fromName = params.get('from');
+  // 탭 딥링크 (?tab=name 등, PWA 바로가기 ?tab=saju 는 사주 섹션으로 이동)
+  const tabParam = params.get('tab');
+  if (tabParam === 'saju') {
+    document.getElementById('sajuHero')?.scrollIntoView({ block: 'start' });
+  } else if (tabParam && document.getElementById(`tab-${tabParam}`)) {
+    activateTab(tabParam);
+  }
+
+  // 궁합 딥링크 (외부 입력이므로 길이 제한, 표시는 항상 textContent/escape)
+  const chemName = (params.get('chem') || '').trim().slice(0, 10);
+  const fromName = (params.get('from') || '').trim().slice(0, 10);
   if (chemName) {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    document.querySelector('.tab-btn[data-tab="chemistry"]')?.classList.add('active');
-    document.getElementById('tab-chemistry')?.classList.add('active');
+    activateTab('chemistry');
     document.getElementById('chemName1').value = chemName;
     if (fromName) {
       document.getElementById('chemName2').value = fromName;
@@ -537,6 +593,8 @@ function handleDeepLink() {
 
 // ─── Referral 시스템 ──────────────────────────────────────────
 function handleReferral(refCode) {
+  // 형식이 이상한 코드는 무시 (URL 파라미터는 외부 입력)
+  if (!/^[A-Za-z0-9_-]{1,32}$/.test(refCode)) return;
   // 신규 유저에게 보너스 클로버 지급
   GameSystem.addClovers(3, 'referral_bonus');
   showToast('친구 초대 보너스 🍀+3 지급!');
@@ -551,16 +609,21 @@ function handleReferral(refCode) {
 function getReferralLink() {
   if (typeof AuthSystem !== 'undefined' && AuthSystem.isLoggedIn()) {
     const uid = AuthSystem.getUser().uid;
-    return `https://nick1148.site?ref=${uid.substring(0, 8)}`;
+    return `https://nick1148.site/?ref=${encodeURIComponent(uid.substring(0, 8))}`;
   }
-  // 비로그인: 랜덤 코드
-  const code = Math.random().toString(36).substring(2, 10);
-  return `https://nick1148.site?ref=${code}`;
+  // 비로그인: 기기별 고정 코드 (복사할 때마다 바뀌지 않도록 저장)
+  let code = null;
+  try { code = localStorage.getItem('lotto_ref_code'); } catch (e) { /* ignore */ }
+  if (!code || !/^[a-z0-9]{6,12}$/.test(code)) {
+    code = Math.random().toString(36).substring(2, 10).padEnd(8, '0');
+    try { localStorage.setItem('lotto_ref_code', code); } catch (e) { /* ignore */ }
+  }
+  return `https://nick1148.site/?ref=${code}`;
 }
 
 function copyReferralLink() {
   const link = getReferralLink();
-  navigator.clipboard.writeText(link).then(() => {
+  copyText(link).then(() => {
     showToast('초대 링크가 복사되었어요! 친구에게 공유하세요 🍀');
     trackEvent('referral_copy');
   }).catch(() => {
@@ -571,9 +634,9 @@ function copyReferralLink() {
 // ─── 초기화 ───────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
   // Kakao SDK 초기화 (사용자 앱 키 필요)
-  if (typeof Kakao !== 'undefined') {
-    Kakao.init('3fe6822c969a8fe0db7f40bf57a5758c');
-    Kakao.isInitialized();
+  // (JavaScript 키는 공개용 키 — 카카오 개발자 콘솔에서 사이트 도메인 제한 필수)
+  if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) {
+    try { Kakao.init('3fe6822c969a8fe0db7f40bf57a5758c'); } catch (e) { console.warn('[Kakao] init failed', e); }
   }
 
   // 게이미피케이션 시스템 초기화
@@ -700,13 +763,13 @@ async function initData() {
   const numbersEl = document.getElementById('latestNumbers');
 
   if (status.isUsingFallback || latest.numbers.length === 0) {
-    roundEl.textContent = '데이터 없음';
+    roundEl.textContent = '데이터를 불러오지 못했어요';
     numbersEl.innerHTML = `
       <div class="data-status fallback">
         ⚠️ 데이터 없음 — 폴백 통계 사용 중
       </div>`;
   } else {
-    roundEl.textContent = `제 ${latest.drwNo}회 (${latest.drwNoDate})`;
+    roundEl.textContent = latest.drwNoDate ? `제 ${latest.drwNo}회 (${latest.drwNoDate})` : `제 ${latest.drwNo}회`;
     numbersEl.innerHTML = '';
     for (const n of latest.numbers) {
       numbersEl.appendChild(createBall(n, true));
@@ -749,20 +812,46 @@ function renderTopBottomBalls() {
 }
 
 // ─── 탭 초기화 ────────────────────────────────────────────
-function initTabs() {
-  const btns = document.querySelectorAll('.tab-btn');
-  const panels = document.querySelectorAll('.tab-panel');
+function activateTab(tabId, focus = false) {
+  const target = document.getElementById(`tab-${tabId}`);
+  if (!target) return;
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    const on = b.dataset.tab === tabId;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-selected', on ? 'true' : 'false');
+    b.tabIndex = on ? 0 : -1;
+    if (on && focus) b.focus();
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => {
+    const on = p === target;
+    p.classList.toggle('active', on);
+    p.hidden = !on;
+  });
+}
 
+function initTabs() {
+  const btns = [...document.querySelectorAll('.tab-btn')];
   btns.forEach(btn => {
     btn.addEventListener('click', () => {
-      btns.forEach(b => b.classList.remove('active'));
-      panels.forEach(p => p.classList.remove('active'));
-
-      btn.classList.add('active');
-      document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+      activateTab(btn.dataset.tab);
       trackEvent('탭_변경', { tab: btn.dataset.tab });
     });
+    // 좌우 화살표 / Home / End 로 탭 이동 (WAI-ARIA tabs 패턴)
+    btn.addEventListener('keydown', (e) => {
+      const i = btns.indexOf(btn);
+      let next = null;
+      if (e.key === 'ArrowRight') next = btns[(i + 1) % btns.length];
+      else if (e.key === 'ArrowLeft') next = btns[(i - 1 + btns.length) % btns.length];
+      else if (e.key === 'Home') next = btns[0];
+      else if (e.key === 'End') next = btns[btns.length - 1];
+      if (next) {
+        e.preventDefault();
+        activateTab(next.dataset.tab, true);
+      }
+    });
   });
+  const active = btns.find(b => b.classList.contains('active')) || btns[0];
+  if (active) activateTab(active.dataset.tab);
 }
 
 // ─── 버튼 초기화 ──────────────────────────────────────────
@@ -794,10 +883,15 @@ function initButtons() {
   // 사주 히어로 버튼 (메인)
   document.getElementById('btn-saju-hero').addEventListener('click', () => {
     const dateVal = document.getElementById('heroBirthDate').value;
-    const hourIdx = parseInt(document.getElementById('heroBirthHour').value);
+    const hourIdx = parseHourIdx(document.getElementById('heroBirthHour').value);
 
     if (!dateVal) {
       showToast('생년월일을 입력해주세요.');
+      return;
+    }
+    const dateError = validateBirthDate(dateVal);
+    if (dateError) {
+      showToast(dateError);
       return;
     }
 
@@ -848,6 +942,10 @@ function initButtons() {
   // MBTI 버튼
   document.getElementById('btn-mbti').addEventListener('click', () => {
     const mbtiType = getSelectedMbti();
+    if (!MbtiGenerator.PROFILES[mbtiType]) {
+      showToast('MBTI 네 가지 축을 모두 선택해주세요.');
+      return;
+    }
     const filterOn = isSmartFilterOn('mbti');
     const result = LottoGenerator.smartFilter(LottoGenerator.generateMbti, [mbtiType], filterOn);
 
@@ -883,8 +981,7 @@ function initButtons() {
     const btn = document.getElementById(`btn-${tabId}-multi10`);
     if (btn) {
       btn.addEventListener('click', () => {
-        if (GameSystem.canAfford(3)) {
-          GameSystem.spendClovers(3, '10set_' + tabId);
+        if (GameSystem.spendClovers(3, '10set_' + tabId)) {
           renderCloverBalance();
           const sets = generateMultiSets10(tabId);
           displayMultiSets(tabId, sets, getMethodEmoji(tabId));
@@ -936,9 +1033,14 @@ function initHistoryToggle() {
   const body = document.getElementById('historyBody');
   const icon = document.getElementById('historyToggleIcon');
 
-  toggle.addEventListener('click', () => {
-    body.classList.toggle('collapsed');
-    icon.classList.toggle('collapsed');
+  const doToggle = () => {
+    const collapsed = body.classList.toggle('collapsed');
+    icon.classList.toggle('collapsed', collapsed);
+    toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  };
+  toggle.addEventListener('click', doToggle);
+  toggle.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); doToggle(); }
   });
 }
 
@@ -947,10 +1049,10 @@ function initHistoryToggle() {
  */
 function updateSajuDisplay() {
   const dateVal = document.getElementById('heroBirthDate').value;
-  if (!dateVal) return;
+  if (!dateVal || validateBirthDate(dateVal)) return;
 
   const [year, month, day] = dateVal.split('-').map(Number);
-  const hourIdx = parseInt(document.getElementById('heroBirthHour').value);
+  const hourIdx = parseHourIdx(document.getElementById('heroBirthHour').value);
   const saju = SajuCalculator.calculate(year, month, day, hourIdx);
   showSajuInfo(saju);
 }
@@ -998,9 +1100,18 @@ function showSpeechBubble(text) {
 }
 
 // ─── 결과 표시 ────────────────────────────────────────────
+// 탭별 최신 표시 요청 토큰 — 버튼 연타 시 이전 요청의 지연 콜백이 공을 덧붙이지 않도록
+const displayTokens = {};
+
 function displayResult(tabId, numbers, methodName, filtered = false) {
   // 번호 필터 적용
   numbers = applyNumberFilter(numbers);
+  const token = (displayTokens[tabId] || 0) + 1;
+  displayTokens[tabId] = token;
+  const isStale = () => displayTokens[tabId] !== token;
+
+  // 이전 5/10세트 결과가 남아 있으면 제거
+  document.querySelector(`#result-${tabId} .multi-set-container`)?.remove();
 
   const ballsContainer = document.getElementById(`balls-${tabId}`);
   const freqContainer = document.getElementById(`freq-${tabId}`);
@@ -1018,6 +1129,7 @@ function displayResult(tabId, numbers, methodName, filtered = false) {
   // 공 순서대로 애니메이션
   numbers.forEach((num, idx) => {
     setTimeout(() => {
+      if (isStale()) return;
       const ball = createBall(num);
       ball.style.animationDelay = `${idx * 60}ms`;
       ballsContainer.appendChild(ball);
@@ -1026,6 +1138,7 @@ function displayResult(tabId, numbers, methodName, filtered = false) {
 
   // 빈도 차트 + 분석 카드 + confetti + 기록 추가
   setTimeout(() => {
+    if (isStale()) return;
     renderFreqChart(freqContainer, numbers);
     renderAnalysisCard(tabId, numbers, filtered);
     createShareButtons(tabId, numbers, methodName);
@@ -1043,6 +1156,9 @@ function displayResult(tabId, numbers, methodName, filtered = false) {
       setCharacterState('idle');
     }, 3000);
   }, numbers.length * 100 + 300);
+
+  // 스크린리더용 결과 안내
+  announce(`${methodName} 번호: ${numbers.join(', ')}`);
 }
 
 // ─── Confetti 효과 ────────────────────────────────────────
@@ -1138,12 +1254,19 @@ function getBarColor(ballClass) {
 function loadHistoryFromStorage() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      generationHistory = JSON.parse(saved);
-    }
+    const parsed = saved ? JSON.parse(saved) : [];
+    // 손상/조작된 항목은 버림 (렌더링 시 예외·주입 방지)
+    generationHistory = Array.isArray(parsed) ? parsed.filter(isValidHistoryItem).slice(0, 100) : [];
   } catch (e) {
     generationHistory = [];
   }
+}
+
+function isValidHistoryItem(item) {
+  return item && typeof item === 'object' &&
+    Array.isArray(item.numbers) && item.numbers.length === 6 &&
+    item.numbers.every(n => Number.isInteger(n) && n >= 1 && n <= 45) &&
+    typeof item.methodName === 'string';
 }
 
 function saveHistoryToStorage() {
@@ -1155,13 +1278,13 @@ function saveHistoryToStorage() {
 }
 
 function addToHistory(numbers, methodName) {
-  const now = new Date();
-  const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-  const dateStr = `${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getDate().toString().padStart(2, '0')}`;
+  const p = KST.parts();
+  const timeStr = `${String(p.hours).padStart(2, '0')}:${String(p.minutes).padStart(2, '0')}`;
+  const dateStr = `${String(p.month).padStart(2, '0')}/${String(p.day).padStart(2, '0')}`;
 
-  generationHistory.unshift({ numbers, methodName, time: timeStr, date: dateStr });
+  generationHistory.unshift({ numbers: [...numbers], methodName, time: timeStr, date: dateStr });
   const limit = (typeof GameSystem !== 'undefined') ? GameSystem.getHistoryLimit() : 20;
-  if (generationHistory.length > limit) generationHistory.pop();
+  if (generationHistory.length > limit) generationHistory.length = limit;
   saveHistoryToStorage();
   renderHistory();
 }
@@ -1193,12 +1316,12 @@ function renderHistory() {
       `<div class="ball ball-sm ${getBallColorClass(n)}">${n}</div>`
     ).join('');
 
-    const displayTime = date ? `${date} ${time}` : time;
+    const displayTime = date ? `${date} ${time || ''}` : (time || '');
 
     item.innerHTML = `
-      <span class="history-method ${methodClass}">${methodName}</span>
-      <div class="history-balls">${ballsHtml}</div>
-      <span class="history-time">${displayTime}</span>
+      <span class="history-method ${methodClass}">${escapeHtml(methodName)}</span>
+      <div class="history-balls" aria-label="${numbers.join(', ')}">${ballsHtml}</div>
+      <span class="history-time">${escapeHtml(displayTime)}</span>
     `;
     list.appendChild(item);
   });
@@ -1216,18 +1339,77 @@ function getMethodClass(methodName) {
 }
 
 // ─── Toast 알림 ───────────────────────────────────────────
+let toastTimer = null;
 function showToast(message) {
   let toast = document.querySelector('.toast');
   if (!toast) {
     toast = document.createElement('div');
     toast.className = 'toast';
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
     document.body.appendChild(toast);
   }
 
   toast.textContent = message;
   toast.classList.add('show');
 
-  setTimeout(() => toast.classList.remove('show'), 2500);
+  // 연속 호출 시 이전 타이머가 새 메시지를 일찍 숨기지 않도록 초기화
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+// 스크린리더 전용 안내 (시각적으로 숨긴 live region)
+function announce(message) {
+  let el = document.getElementById('srAnnouncer');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'srAnnouncer';
+    el.className = 'sr-only';
+    el.setAttribute('aria-live', 'polite');
+    document.body.appendChild(el);
+  }
+  el.textContent = '';
+  setTimeout(() => { el.textContent = message; }, 50);
+}
+
+// 클립보드 복사 (Clipboard API 미지원/비보안 컨텍스트 대비 폴백)
+function copyText(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    return navigator.clipboard.writeText(text);
+  }
+  return new Promise((resolve, reject) => {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      ta.remove();
+      ok ? resolve() : reject(new Error('copy failed'));
+    } catch (e) {
+      reject(e);
+    }
+  });
+}
+
+// ─── 입력 검증 ───────────────────────────────────────────
+function parseHourIdx(value) {
+  const n = parseInt(value, 10);
+  return Number.isInteger(n) && n >= 0 && n <= 11 ? n : -1;
+}
+
+/**
+ * 생년월일 검증 — 오류 메시지 반환, 정상이면 null
+ * (직접 타이핑 시 min/max 를 우회할 수 있으므로 JS 에서도 확인)
+ */
+function validateBirthDate(dateVal) {
+  if (!KST.isValidDateStr(dateVal)) return '올바른 생년월일을 입력해주세요.';
+  if (dateVal < '1900-01-01') return '1900년 이후 날짜를 입력해주세요.';
+  if (dateVal > KST.today()) return '미래 날짜는 입력할 수 없어요.';
+  return null;
 }
 
 // ─── MBTI 선택기 ────────────────────────────────────────
@@ -1241,8 +1423,12 @@ function initMbtiSelector() {
 
     const axis = btn.dataset.axis;
     // 같은 축의 다른 버튼 비활성화
-    selector.querySelectorAll(`.mbti-opt[data-axis="${axis}"]`).forEach(b => b.classList.remove('active'));
+    selector.querySelectorAll(`.mbti-opt[data-axis="${axis}"]`).forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-pressed', 'false');
+    });
     btn.classList.add('active');
+    btn.setAttribute('aria-pressed', 'true');
 
     updateMbtiDisplay();
   });
@@ -1281,8 +1467,8 @@ function showNameInfo(nameInfo) {
     const box = document.createElement('div');
     box.className = 'name-char-box';
     box.innerHTML = `
-      <span class="name-char-main">${d.char}</span>
-      <span class="name-char-jamo">${d.cho}${d.jung}${d.jong}</span>
+      <span class="name-char-main">${escapeHtml(d.char)}</span>
+      <span class="name-char-jamo">${escapeHtml(d.cho + d.jung + d.jong)}</span>
       <span class="name-char-strokes">${d.strokes}획</span>
     `;
     decomposedEl.appendChild(box);
@@ -1364,13 +1550,7 @@ const numberFilter = {
 
 function openNumberFilter() {
   // 클로버 체크 (첫 사용 시 🍀2 소모)
-  if (!numberFilter.paid) {
-    if (GameSystem.getBalance() < 2) {
-      showPremiumGate('번호 필터', 2);
-      return;
-    }
-  }
-
+  // 필터 화면은 누구나 열 수 있고, 처음 '적용'할 때만 🍀2 를 소모한다
   const modal = document.getElementById('numberFilterModal');
   renderFilterBalls();
   updateFilterSummary();
@@ -1385,14 +1565,22 @@ function renderFilterBalls() {
 
   for (let n = 1; n <= 45; n++) {
     // 제외 볼
-    const exBall = document.createElement('div');
+    const exBall = document.createElement('button');
+    exBall.type = 'button';
+    exBall.setAttribute('aria-pressed', numberFilter.excludes.has(n) ? 'true' : 'false');
+    exBall.setAttribute('aria-label', `${n}번 제외`);
+    exBall.disabled = numberFilter.includes.has(n);
     exBall.className = 'filter-ball' + (numberFilter.excludes.has(n) ? ' excluded' : '') + (numberFilter.includes.has(n) ? ' disabled' : '');
     exBall.textContent = n;
     exBall.onclick = () => toggleFilterBall('exclude', n);
     excludeGrid.appendChild(exBall);
 
     // 포함 볼
-    const inBall = document.createElement('div');
+    const inBall = document.createElement('button');
+    inBall.type = 'button';
+    inBall.setAttribute('aria-pressed', numberFilter.includes.has(n) ? 'true' : 'false');
+    inBall.setAttribute('aria-label', `${n}번 포함`);
+    inBall.disabled = numberFilter.excludes.has(n);
     inBall.className = 'filter-ball' + (numberFilter.includes.has(n) ? ' included' : '') + (numberFilter.excludes.has(n) ? ' disabled' : '');
     inBall.textContent = n;
     inBall.onclick = () => toggleFilterBall('include', n);
@@ -1413,8 +1601,8 @@ function toggleFilterBall(type, num) {
     numberFilter.includes.has(num) ? numberFilter.includes.delete(num) : numberFilter.includes.add(num);
   }
 
-  // 포함+제외 합쳐서 39개 이상 제외 불가 (최소 6개 남아야)
-  if (numberFilter.excludes.size > 39 - numberFilter.includes.size) {
+  // 제외 후 남는 번호(포함 번호 포함)가 6개 미만이면 조합을 만들 수 없음
+  if (45 - numberFilter.excludes.size < 6) {
     numberFilter.excludes.delete(num);
     showToast('번호가 부족해요! 최소 6개는 남겨야 합니다');
     return;
@@ -1442,19 +1630,30 @@ function applyNumberFilter(numbers) {
   if (!numberFilter.active) return numbers;
 
   // 포함 번호는 반드시 포함
-  const mustInclude = [...numberFilter.includes];
-  const available = [];
-  for (let i = 1; i <= 45; i++) {
-    if (!numberFilter.excludes.has(i) && !numberFilter.includes.has(i)) {
-      available.push(i);
-    }
+  const result = new Set(numberFilter.includes);
+
+  // 생성 알고리즘(사주/이름 등)이 고른 번호 중 제외되지 않은 것은 최대한 유지
+  for (const n of numbers) {
+    if (result.size >= 6) break;
+    if (!numberFilter.excludes.has(n)) result.add(n);
   }
 
-  // 나머지를 랜덤으로 채움
-  const needed = 6 - mustInclude.length;
-  const shuffled = available.sort(() => Math.random() - 0.5);
-  const result = [...mustInclude, ...shuffled.slice(0, needed)];
-  return result.sort((a, b) => a - b);
+  // 부족분은 남은 번호에서 균등 무작위(Fisher-Yates)로 채움
+  if (result.size < 6) {
+    const available = [];
+    for (let i = 1; i <= 45; i++) {
+      if (!numberFilter.excludes.has(i) && !result.has(i)) available.push(i);
+    }
+    for (let i = available.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [available[i], available[j]] = [available[j], available[i]];
+    }
+    for (const n of available) {
+      if (result.size >= 6) break;
+      result.add(n);
+    }
+  }
+  return [...result].slice(0, 6).sort((a, b) => a - b);
 }
 
 // ─── 주간 행운 리포트 ────────────────────────────────────────
@@ -1463,12 +1662,15 @@ function initWeeklyReport() {
   if (!btn) return;
 
   btn.addEventListener('click', () => {
-    if (!GameSystem.spendClover(5)) {
-      showPremiumGate('주간 행운 리포트', 5);
+    // (기존 코드는 존재하지 않는 spendClover/showPremiumGate 를 호출해 항상 오류가 났음)
+    if (!GameSystem.spendClovers(5, 'weekly_report')) {
+      showPremiumModal('주간 행운 리포트', 5, () => {
+        renderCloverBalance();
+        generateWeeklyReport();
+      });
       return;
     }
     renderCloverBalance();
-    trackEvent('클로버_사용', { feature: '주간리포트', cost: 5 });
     generateWeeklyReport();
   });
 }
@@ -1480,8 +1682,10 @@ function generateWeeklyReport() {
   btn.textContent = '분석 중...';
 
   // 사주 데이터 가져오기
-  const birthDate = document.getElementById('heroBirthDate').value || '1990-01-01';
-  const birthHour = parseInt(document.getElementById('heroBirthHour').value) || -1;
+  const rawBirth = document.getElementById('heroBirthDate').value;
+  const birthDate = rawBirth && !validateBirthDate(rawBirth) ? rawBirth : '1990-01-01';
+  // `parseInt(...) || -1` 은 자시(0)를 '모름(-1)'으로 바꿔버리는 버그가 있었음
+  const birthHour = parseHourIdx(document.getElementById('heroBirthHour').value);
   const [year, month, day] = birthDate.split('-').map(Number);
 
   // 6가지 방법으로 번호 생성
@@ -1566,13 +1770,17 @@ function initNumberFilter() {
     const hasFilter = numberFilter.excludes.size > 0 || numberFilter.includes.size > 0;
 
     if (hasFilter && !numberFilter.paid) {
-      // 첫 활성화 시 클로버 소모
-      if (!GameSystem.spendClover(2)) {
-        showPremiumGate('번호 필터', 2);
+      // 첫 활성화 시 클로버 소모 (부족하면 충전/공유 안내 후 다시 적용하도록)
+      if (!GameSystem.spendClovers(2, 'number_filter')) {
+        document.getElementById('numberFilterModal').style.display = 'none';
+        showPremiumModal('번호 필터', 2, () => {
+          numberFilter.paid = true;
+          renderCloverBalance();
+          showToast('🍀2 사용 완료! 필터 화면에서 다시 적용해주세요.');
+        });
         return;
       }
       numberFilter.paid = true;
-      trackEvent('클로버_사용', { feature: '번호필터', cost: 2 });
     }
 
     numberFilter.active = hasFilter;
@@ -1865,18 +2073,32 @@ function startLuckyTimeCountdown() {
     }
   }
   update();
-  setInterval(update, 60000); // 매분 업데이트
+  let shownDate = KST.today();
+  setInterval(() => {
+    // 앱을 켜 둔 채 자정(KST)이 지나면 오늘의 운세/이벤트/미션을 새 날짜로 갱신
+    if (KST.today() !== shownDate) {
+      shownDate = KST.today();
+      GameSystem.load();
+      initDailyFortune();
+      renderDailyInsight();
+      renderEventBanner();
+      initDailyMission();
+      initMbtiRanking();
+    }
+    update();
+  }, 60000); // 매분 업데이트
 }
 
 function initDailyFortune() {
-  const now = new Date();
-  const dateStr = `${now.getFullYear()}.${(now.getMonth()+1).toString().padStart(2,'0')}.${now.getDate().toString().padStart(2,'0')}`;
+  // 한국 날짜 기준 (해외/UTC 기기에서도 한국 날짜에 맞춘 '오늘')
+  const kp = KST.parts();
+  const dateStr = KST.today().replace(/-/g, '.');
   const dayNames = ['일','월','화','수','목','금','토'];
 
-  document.getElementById('fortuneDate').textContent = `${dateStr} (${dayNames[now.getDay()]}요일)`;
+  document.getElementById('fortuneDate').textContent = `${dateStr} (${dayNames[kp.dayOfWeek]}요일)`;
 
   // 날짜 기반 시드로 결정론적 번호 생성
-  const seed = now.getFullYear() * 10000 + (now.getMonth()+1) * 100 + now.getDate();
+  const seed = KST.dateSeed();
   const numbers = generateDailyNumbers(seed);
 
   const ballsEl = document.getElementById('fortuneBalls');
@@ -1909,25 +2131,26 @@ function initDailyFortune() {
   if (shareBtn) {
     const shareText = `🍀 ${dateStr} 오늘의 행운 번호: ${numbers.join(', ')}\n행운 점수: ${score}점 | 행운 색상: ${todayColor.name}\n나도 뽑아보기 👉 https://nick1148.site`;
 
-    shareBtn.addEventListener('click', () => {
+    // onclick 대입: 자정 갱신 시 재호출되어도 핸들러가 중복 등록되지 않음
+    shareBtn.onclick = () => {
       if (navigator.share) {
         navigator.share({ title: '🍀 오늘의 행운 번호', text: shareText, url: 'https://nick1148.site' })
           .then(() => rewardShare('native')).catch(() => {});
       } else {
-        navigator.clipboard.writeText(shareText).then(() => {
+        copyText(shareText).then(() => {
           rewardShare('copy');
         }).catch(() => {
           showToast('공유 기능을 사용할 수 없습니다.');
         });
       }
       trackEvent('공유_클릭', { type: '오늘의번호_네이티브' });
-    });
+    };
   }
 
   // 카카오톡 오늘의 번호 공유
   const kakaoBtn = document.getElementById('fortuneKakaoBtn');
   if (kakaoBtn) {
-    kakaoBtn.addEventListener('click', () => {
+    kakaoBtn.onclick = () => {
       trackEvent('공유_클릭', { type: '오늘의번호_카카오' });
       if (typeof Kakao !== 'undefined' && Kakao.isInitialized()) {
         Kakao.Share.sendDefault({
@@ -1943,7 +2166,7 @@ function initDailyFortune() {
       } else {
         showToast('카카오톡 공유를 이용하려면 앱 키가 필요합니다.');
       }
-    });
+    };
   }
 }
 
@@ -1978,7 +2201,7 @@ function generateMultiSets(tabId) {
       numbers = LottoGenerator.smartFilter(LottoGenerator.generateRandom, [], filterOn);
     }
     const nums = Array.isArray(numbers) ? numbers : numbers.numbers;
-    sets.push(nums);
+    sets.push(applyNumberFilter(nums));
   }
   return sets;
 }
@@ -1988,6 +2211,7 @@ function displayMultiSets(tabId, sets, methodName) {
   const ballsContainer = document.getElementById(`balls-${tabId}`);
   const freqContainer = document.getElementById(`freq-${tabId}`);
   const analysisContainer = document.getElementById(`analysis-${tabId}`);
+  displayTokens[tabId] = (displayTokens[tabId] || 0) + 1; // 진행 중인 단일 결과 애니메이션 취소
 
   ballsContainer.innerHTML = '';
   freqContainer.innerHTML = '';
@@ -2038,18 +2262,18 @@ function displayMultiSets(tabId, sets, methodName) {
     <button class="share-btn share-image"><span>📸</span> 이미지 저장</button>
   `;
   shareBar.querySelector('.share-copy').addEventListener('click', () => {
-    navigator.clipboard.writeText(shareText).then(() => rewardShare('copy')).catch(() => {});
+    copyText(shareText).then(() => rewardShare('copy')).catch(() => showToast('복사에 실패했어요.'));
   });
   shareBar.querySelector('.share-image').addEventListener('click', () => {
     if (typeof html2canvas === 'undefined') { showToast('잠시 후 다시 시도해주세요.'); return; }
     showToast('이미지 생성 중...');
     html2canvas(container, { backgroundColor: '#fff5f9', scale: 2 }).then(canvas => {
       const link = document.createElement('a');
-      link.download = `lotto-5set-${Date.now()}.png`;
+      link.download = `lotto-sets-${Date.now()}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
       rewardShare('image');
-    });
+    }).catch(() => showToast('이미지 생성에 실패했습니다.'));
   });
   resultArea.appendChild(shareBar);
   insertSupportNudge(resultArea);
@@ -2111,7 +2335,7 @@ function compareWithLatest() {
     html += `
       <div class="compare-item ${matchClass}">
         <div class="compare-item-top">
-          <span class="compare-method">${methodName}</span>
+          <span class="compare-method">${escapeHtml(methodName)}</span>
           <span class="compare-match-badge">${matchEmoji}</span>
         </div>
         <div class="compare-balls">${ballsHtml}</div>
@@ -2180,17 +2404,9 @@ function createShareButtons(tabId, numbers, methodName) {
 
   // 링크 복사
   bar.querySelector('.share-copy').addEventListener('click', () => {
-    navigator.clipboard.writeText(shareText).then(() => {
+    copyText(shareText).then(() => {
       rewardShare('copy');
-    }).catch(() => {
-      const ta = document.createElement('textarea');
-      ta.value = shareText;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      ta.remove();
-      rewardShare('copy');
-    });
+    }).catch(() => showToast('복사에 실패했어요. 길게 눌러 직접 복사해주세요.'));
   });
 
   // 이미지 저장
@@ -2229,7 +2445,7 @@ function createShareButtons(tabId, numbers, methodName) {
         buttons: [{ title: '도전 받기!', link: { mobileWebUrl: 'https://nick1148.site', webUrl: 'https://nick1148.site' } }],
       }).then(() => rewardShare('kakao'));
     } else {
-      navigator.clipboard.writeText(challengeText).then(() => rewardShare('copy'));
+      copyText(challengeText).then(() => rewardShare('copy')).catch(() => showToast('복사에 실패했어요.'));
     }
   });
 
@@ -2266,7 +2482,7 @@ function displayChemistryResult(result) {
 
   card.innerHTML = `
     <div class="chem-card-header">💕 로또 궁합 결과</div>
-    <div class="chem-names">${result.name1} <span class="chem-heart-icon">♡</span> ${result.name2}</div>
+    <div class="chem-names">${escapeHtml(result.name1)} <span class="chem-heart-icon">♡</span> ${escapeHtml(result.name2)}</div>
     <div class="chem-score-area">
       <div class="chem-score-label">궁합 점수</div>
       <div class="chem-score-number"><span class="chem-score-value">0</span>%</div>
@@ -2285,7 +2501,7 @@ function displayChemistryResult(result) {
     </div>
     <div class="chem-numbers-label">🍀 공동 행운 번호</div>
     <div class="chem-balls balls-container">${ballsHtml}</div>
-    <div class="chem-comment">"${result.comment}"</div>
+    <div class="chem-comment">"${escapeHtml(result.comment)}"</div>
     <div class="chem-watermark">nick1148.site</div>
   `;
 
@@ -2340,17 +2556,9 @@ function displayChemistryResult(result) {
   }
 
   shareBar.querySelector('.share-copy').addEventListener('click', () => {
-    navigator.clipboard.writeText(shareText).then(() => {
+    copyText(shareText).then(() => {
       rewardShare('copy');
-    }).catch(() => {
-      const ta = document.createElement('textarea');
-      ta.value = shareText;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      ta.remove();
-      rewardShare('copy');
-    });
+    }).catch(() => showToast('복사에 실패했어요. 길게 눌러 직접 복사해주세요.'));
   });
 
   // 일반 이미지 저장
@@ -2359,7 +2567,7 @@ function displayChemistryResult(result) {
     showToast('이미지 생성 중...');
     html2canvas(card, { backgroundColor: '#fff5f9', scale: 2, useCORS: true }).then(canvas => {
       const link = document.createElement('a');
-      link.download = `lotto-chemistry-${result.name1}-${result.name2}-${Date.now()}.png`;
+      link.download = `lotto-chemistry-${safeFileName(result.name1)}-${safeFileName(result.name2)}-${Date.now()}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
       rewardShare('image');
@@ -2410,7 +2618,7 @@ function displayChemistryResult(result) {
       sCtx.fillText('nick1148.site', 540, 1790);
 
       const link = document.createElement('a');
-      link.download = `lotto-story-${result.name1}-${result.name2}-${Date.now()}.png`;
+      link.download = `lotto-story-${safeFileName(result.name1)}-${safeFileName(result.name2)}-${Date.now()}.png`;
       link.href = storyCanvas.toDataURL('image/png');
       link.click();
       rewardShare('image');
@@ -2534,7 +2742,7 @@ function generateMultiSets10(tabId) {
       numbers = LottoGenerator.smartFilter(LottoGenerator.generateRandom, [], filterOn);
     }
     const nums = Array.isArray(numbers) ? numbers : numbers.numbers;
-    sets.push(nums);
+    sets.push(applyNumberFilter(nums));
   }
   return sets;
 }
@@ -2718,7 +2926,7 @@ function generatePremiumExplanation(type, result) {
     const n = result.nameInfo;
     let detail = '';
     detail += `<span class="premium-section-title">◆ 성명학 분석</span>`;
-    detail += `"${n.name}"의 총 ${n.strokes}획 — ${n.element.name}(${n.element.ko}) 오행\n`;
+    detail += `"${escapeHtml(n.name)}"의 총 ${n.strokes}획 — ${n.element.name}(${n.element.ko}) 오행\n`;
     detail += `${n.element.desc}을(를) 상징하는 기운이에요.\n`;
 
     detail += `\n<span class="premium-section-title">◆ 획수 해석</span>`;
@@ -2796,6 +3004,10 @@ function updateTierSelection() {
 function initCloverShop() {
   // 티어 선택 → 로그인 필수 → 결제 링크
   document.querySelectorAll('.clover-tier').forEach(el => {
+    // role="button" 이므로 키보드(Enter/Space)로도 선택 가능하게
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); }
+    });
     el.addEventListener('click', () => {
       selectedCloverTier = el.dataset.tier;
       updateTierSelection();
@@ -2803,10 +3015,10 @@ function initCloverShop() {
       // 결제 전 로그인 필수 (데이터 보존)
       if (typeof AuthSystem !== 'undefined' && AuthSystem.isAvailable()) {
         AuthSystem.requireLogin(() => {
-          window.open('https://qr.kakaopay.com/FM5t5VmBF', '_blank');
+          window.open('https://qr.kakaopay.com/FM5t5VmBF', '_blank', 'noopener');
         });
       } else {
-        window.open('https://qr.kakaopay.com/FM5t5VmBF', '_blank');
+        window.open('https://qr.kakaopay.com/FM5t5VmBF', '_blank', 'noopener');
       }
     });
   });
@@ -2851,6 +3063,10 @@ function processCloverClaim() {
 }
 
 // ─── 유틸 ─────────────────────────────────────────────────
+function safeFileName(text) {
+  return String(text).replace(/[^가-힣a-zA-Z0-9]/g, '') || 'name';
+}
+
 function pickRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }

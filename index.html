@@ -14,7 +14,7 @@
   <meta property="og:type" content="website">
   <meta property="og:title" content="🍀 로또 번호 예상기 - 나만의 행운번호">
   <meta property="og:description" content="사주·이름·MBTI·통계 기반 6가지 알고리즘! 무료로 나만의 로또 번호를 뽑아보세요.">
-  <meta property="og:url" content="https://nick1148.site">
+  <meta property="og:url" content="https://nick1148.site/">
   <meta property="og:image" content="https://nick1148.site/og-image.png">
   <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
@@ -39,7 +39,7 @@
   <link rel="apple-touch-icon" href="/icons/icon.svg">
 
   <!-- 검색엔진 -->
-  <link rel="canonical" href="https://nick1148.site">
+  <link rel="canonical" href="https://nick1148.site/">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -73,7 +73,7 @@
     "@context": "https://schema.org",
     "@type": "WebApplication",
     "name": "로또 번호 예상기",
-    "url": "https://nick1148.site",
+    "url": "https://nick1148.site/",
     "description": "사주, 이름, MBTI, 통계 기반으로 나만의 로또 번호를 무료로 생성하는 웹앱",
     "applicationCategory": "EntertainmentApplication",
     "operatingSystem": "Any",
@@ -104,7 +104,7 @@
 
   <div class="app-container">
     <!-- 캐릭터 -->
-    <div class="character-area">
+    <div class="character-area" aria-hidden="true">
       <div class="character char-idle" id="character">
         <svg viewBox="0 0 120 120" width="80" height="80" xmlns="http://www.w3.org/2000/svg">
           <!-- 왕관 -->
@@ -155,13 +155,13 @@
       <div class="header-content">
         <h1 class="app-title" data-i18n="app.title">🍀 로또 번호 예상기</h1>
         <div class="header-right">
-          <button class="lang-switch-btn" id="langSwitchBtn" title="Language">🌐</button>
-          <div class="clover-display" id="cloverDisplay" title="내 클로버">
+          <button type="button" class="lang-switch-btn" id="langSwitchBtn" title="Language" aria-label="언어 전환 (Language)">🌐</button>
+          <div class="clover-display" id="cloverDisplay" title="내 클로버" aria-label="내 클로버" role="status">
             <span class="clover-icon">🍀</span>
             <span class="clover-count" id="cloverCount">0</span>
           </div>
-          <button class="trophy-btn" id="trophyBtn" title="업적">🏆</button>
-          <button class="login-btn" id="loginBtn" title="로그인">👤</button>
+          <button type="button" class="trophy-btn" id="trophyBtn" title="업적" aria-label="업적 보기">🏆</button>
+          <button type="button" class="login-btn" id="loginBtn" title="로그인" aria-label="로그인">👤</button>
           <span class="login-user-name" id="loginUserName" style="display:none"></span>
         </div>
       </div>
@@ -310,11 +310,11 @@
         </div>
         <div class="smart-filter-row">
           <label class="smart-filter-toggle">
-            <input type="checkbox" class="smart-filter-checkbox" data-tab="saju-hero">
+            <input type="checkbox" class="smart-filter-checkbox" aria-label="통계 필터 (합계·홀짝·고저·연속 조건에 맞는 조합만)" data-tab="saju-hero">
             <span class="smart-filter-slider"></span>
           </label>
           <span class="smart-filter-label">📊 통계 필터</span>
-          <button class="number-filter-btn" onclick="openNumberFilter()">🎯 번호 필터 <span class="premium-cost">🍀2</span></button>
+          <button type="button" class="number-filter-btn" onclick="openNumberFilter()">🎯 번호 필터 <span class="premium-cost">🍀2</span></button>
         </div>
         <button class="generate-btn saju-hero-btn" id="btn-saju-hero">
           <span class="btn-icon">✨</span>
@@ -351,29 +351,29 @@
     </section>
 
     <!-- 탭 네비게이션 -->
-    <nav class="tab-nav">
-      <button class="tab-btn active" data-tab="random">
-        <span class="tab-icon">🎲</span>
+    <nav class="tab-nav" role="tablist" aria-label="번호 생성 방식">
+      <button type="button" class="tab-btn active" data-tab="random" role="tab" id="tabbtn-random" aria-controls="tab-random" aria-selected="true">
+        <span class="tab-icon" aria-hidden="true">🎲</span>
         <span class="tab-label" data-i18n="tab.random">완전 랜덤</span>
       </button>
-      <button class="tab-btn" data-tab="frequent">
-        <span class="tab-icon">🔥</span>
+      <button type="button" class="tab-btn" data-tab="frequent" role="tab" id="tabbtn-frequent" aria-controls="tab-frequent" aria-selected="false">
+        <span class="tab-icon" aria-hidden="true">🔥</span>
         <span class="tab-label" data-i18n="tab.frequent">자주 나온</span>
       </button>
-      <button class="tab-btn" data-tab="rare">
-        <span class="tab-icon">❄️</span>
+      <button type="button" class="tab-btn" data-tab="rare" role="tab" id="tabbtn-rare" aria-controls="tab-rare" aria-selected="false">
+        <span class="tab-icon" aria-hidden="true">❄️</span>
         <span class="tab-label" data-i18n="tab.rare">안 나온</span>
       </button>
-      <button class="tab-btn" data-tab="name">
-        <span class="tab-icon">📛</span>
+      <button type="button" class="tab-btn" data-tab="name" role="tab" id="tabbtn-name" aria-controls="tab-name" aria-selected="false">
+        <span class="tab-icon" aria-hidden="true">📛</span>
         <span class="tab-label" data-i18n="tab.name">이름</span>
       </button>
-      <button class="tab-btn" data-tab="mbti">
-        <span class="tab-icon">🧠</span>
+      <button type="button" class="tab-btn" data-tab="mbti" role="tab" id="tabbtn-mbti" aria-controls="tab-mbti" aria-selected="false">
+        <span class="tab-icon" aria-hidden="true">🧠</span>
         <span class="tab-label" data-i18n="tab.mbti">MBTI</span>
       </button>
-      <button class="tab-btn" data-tab="chemistry">
-        <span class="tab-icon">💕</span>
+      <button type="button" class="tab-btn" data-tab="chemistry" role="tab" id="tabbtn-chemistry" aria-controls="tab-chemistry" aria-selected="false">
+        <span class="tab-icon" aria-hidden="true">💕</span>
         <span class="tab-label" data-i18n="tab.chemistry">궁합</span>
       </button>
     </nav>
@@ -381,17 +381,17 @@
     <!-- 탭 콘텐츠 -->
     <main class="tab-content">
       <!-- 완전 랜덤 탭 -->
-      <div class="tab-panel active" id="tab-random">
+      <div class="tab-panel active" id="tab-random" role="tabpanel" aria-labelledby="tabbtn-random">
         <div class="panel-description">
           <p>1~45 중 완전히 무작위로 6개를 선택합니다.</p>
         </div>
         <div class="smart-filter-row">
           <label class="smart-filter-toggle">
-            <input type="checkbox" class="smart-filter-checkbox" data-tab="random">
+            <input type="checkbox" class="smart-filter-checkbox" aria-label="통계 필터 (합계·홀짝·고저·연속 조건에 맞는 조합만)" data-tab="random">
             <span class="smart-filter-slider"></span>
           </label>
           <span class="smart-filter-label">📊 통계 필터</span>
-          <button class="number-filter-btn" onclick="openNumberFilter()">🎯 번호 필터 <span class="premium-cost">🍀2</span></button>
+          <button type="button" class="number-filter-btn" onclick="openNumberFilter()">🎯 번호 필터 <span class="premium-cost">🍀2</span></button>
         </div>
         <div class="btn-group">
           <button class="generate-btn" id="btn-random">
@@ -417,17 +417,17 @@
       </div>
 
       <!-- 자주 나온 번호 탭 -->
-      <div class="tab-panel" id="tab-frequent">
+      <div class="tab-panel" id="tab-frequent" role="tabpanel" aria-labelledby="tabbtn-frequent">
         <div class="panel-description">
           <p>최근 당첨 이력에서 <strong>가장 자주 나온</strong> 상위 15개 번호 중 6개를 선택합니다.</p>
         </div>
         <div class="smart-filter-row">
           <label class="smart-filter-toggle">
-            <input type="checkbox" class="smart-filter-checkbox" data-tab="frequent">
+            <input type="checkbox" class="smart-filter-checkbox" aria-label="통계 필터 (합계·홀짝·고저·연속 조건에 맞는 조합만)" data-tab="frequent">
             <span class="smart-filter-slider"></span>
           </label>
           <span class="smart-filter-label">📊 통계 필터</span>
-          <button class="number-filter-btn" onclick="openNumberFilter()">🎯 번호 필터 <span class="premium-cost">🍀2</span></button>
+          <button type="button" class="number-filter-btn" onclick="openNumberFilter()">🎯 번호 필터 <span class="premium-cost">🍀2</span></button>
         </div>
         <div class="btn-group">
           <button class="generate-btn" id="btn-frequent">
@@ -457,17 +457,17 @@
       </div>
 
       <!-- 안 나온 번호 탭 -->
-      <div class="tab-panel" id="tab-rare">
+      <div class="tab-panel" id="tab-rare" role="tabpanel" aria-labelledby="tabbtn-rare">
         <div class="panel-description">
           <p>최근 당첨 이력에서 <strong>가장 적게 나온</strong> 하위 15개 번호 중 6개를 선택합니다.</p>
         </div>
         <div class="smart-filter-row">
           <label class="smart-filter-toggle">
-            <input type="checkbox" class="smart-filter-checkbox" data-tab="rare">
+            <input type="checkbox" class="smart-filter-checkbox" aria-label="통계 필터 (합계·홀짝·고저·연속 조건에 맞는 조합만)" data-tab="rare">
             <span class="smart-filter-slider"></span>
           </label>
           <span class="smart-filter-label">📊 통계 필터</span>
-          <button class="number-filter-btn" onclick="openNumberFilter()">🎯 번호 필터 <span class="premium-cost">🍀2</span></button>
+          <button type="button" class="number-filter-btn" onclick="openNumberFilter()">🎯 번호 필터 <span class="premium-cost">🍀2</span></button>
         </div>
         <div class="btn-group">
           <button class="generate-btn" id="btn-rare">
@@ -497,7 +497,7 @@
       </div>
 
       <!-- 이름 탭 -->
-      <div class="tab-panel" id="tab-name">
+      <div class="tab-panel" id="tab-name" role="tabpanel" aria-labelledby="tabbtn-name">
         <div class="panel-description">
           <p>이름의 한글 자모를 분해하여 <strong>획수와 오행</strong>을 계산하고 번호를 생성합니다.<br>
           같은 이름이면 항상 같은 번호가 나옵니다.</p>
@@ -516,11 +516,11 @@
 
         <div class="smart-filter-row">
           <label class="smart-filter-toggle">
-            <input type="checkbox" class="smart-filter-checkbox" data-tab="name">
+            <input type="checkbox" class="smart-filter-checkbox" aria-label="통계 필터 (합계·홀짝·고저·연속 조건에 맞는 조합만)" data-tab="name">
             <span class="smart-filter-slider"></span>
           </label>
           <span class="smart-filter-label">📊 통계 필터</span>
-          <button class="number-filter-btn" onclick="openNumberFilter()">🎯 번호 필터 <span class="premium-cost">🍀2</span></button>
+          <button type="button" class="number-filter-btn" onclick="openNumberFilter()">🎯 번호 필터 <span class="premium-cost">🍀2</span></button>
         </div>
 
         <button class="generate-btn name-btn" id="btn-name">
@@ -546,7 +546,7 @@
       </div>
 
       <!-- MBTI 탭 -->
-      <div class="tab-panel" id="tab-mbti">
+      <div class="tab-panel" id="tab-mbti" role="tabpanel" aria-labelledby="tabbtn-mbti">
         <div class="panel-description">
           <p>MBTI 4축 특성에 기반하여 <strong>오늘의 행운 번호</strong>를 생성합니다.<br>
           같은 MBTI라도 매일 다른 번호가 나옵니다.</p>
@@ -556,23 +556,23 @@
           <div class="mbti-selector" id="mbtiSelector">
             <div class="mbti-axis">
               <span class="mbti-axis-label" data-i18n="mbti.energy">에너지</span>
-              <button class="mbti-opt active" data-axis="0" data-value="E">E</button>
-              <button class="mbti-opt" data-axis="0" data-value="I">I</button>
+              <button type="button" aria-pressed="true" class="mbti-opt active" data-axis="0" data-value="E">E</button>
+              <button type="button" aria-pressed="false" class="mbti-opt" data-axis="0" data-value="I">I</button>
             </div>
             <div class="mbti-axis">
               <span class="mbti-axis-label" data-i18n="mbti.perception">인식</span>
-              <button class="mbti-opt active" data-axis="1" data-value="S">S</button>
-              <button class="mbti-opt" data-axis="1" data-value="N">N</button>
+              <button type="button" aria-pressed="true" class="mbti-opt active" data-axis="1" data-value="S">S</button>
+              <button type="button" aria-pressed="false" class="mbti-opt" data-axis="1" data-value="N">N</button>
             </div>
             <div class="mbti-axis">
               <span class="mbti-axis-label" data-i18n="mbti.judgment">판단</span>
-              <button class="mbti-opt active" data-axis="2" data-value="T">T</button>
-              <button class="mbti-opt" data-axis="2" data-value="F">F</button>
+              <button type="button" aria-pressed="true" class="mbti-opt active" data-axis="2" data-value="T">T</button>
+              <button type="button" aria-pressed="false" class="mbti-opt" data-axis="2" data-value="F">F</button>
             </div>
             <div class="mbti-axis">
               <span class="mbti-axis-label" data-i18n="mbti.lifestyle">생활</span>
-              <button class="mbti-opt active" data-axis="3" data-value="J">J</button>
-              <button class="mbti-opt" data-axis="3" data-value="P">P</button>
+              <button type="button" aria-pressed="true" class="mbti-opt active" data-axis="3" data-value="J">J</button>
+              <button type="button" aria-pressed="false" class="mbti-opt" data-axis="3" data-value="P">P</button>
             </div>
           </div>
           <div class="mbti-selected" id="mbtiSelected">
@@ -583,11 +583,11 @@
 
         <div class="smart-filter-row">
           <label class="smart-filter-toggle">
-            <input type="checkbox" class="smart-filter-checkbox" data-tab="mbti">
+            <input type="checkbox" class="smart-filter-checkbox" aria-label="통계 필터 (합계·홀짝·고저·연속 조건에 맞는 조합만)" data-tab="mbti">
             <span class="smart-filter-slider"></span>
           </label>
           <span class="smart-filter-label">📊 통계 필터</span>
-          <button class="number-filter-btn" onclick="openNumberFilter()">🎯 번호 필터 <span class="premium-cost">🍀2</span></button>
+          <button type="button" class="number-filter-btn" onclick="openNumberFilter()">🎯 번호 필터 <span class="premium-cost">🍀2</span></button>
         </div>
 
         <button class="generate-btn mbti-btn" id="btn-mbti">
@@ -612,7 +612,7 @@
         </div>
       </div>
       <!-- 궁합 탭 -->
-      <div class="tab-panel" id="tab-chemistry">
+      <div class="tab-panel" id="tab-chemistry" role="tabpanel" aria-labelledby="tabbtn-chemistry">
         <div class="panel-description">
           <p>두 사람의 이름으로 <strong>로또 궁합</strong>을 확인하고 공동 행운번호를 생성합니다.<br>
           같은 이름 조합이면 같은 날엔 항상 같은 결과!</p>
@@ -670,9 +670,9 @@
 
     <!-- 생성 기록 -->
     <section class="history-section">
-      <div class="history-header" id="historyToggle">
+      <div class="history-header" id="historyToggle" role="button" tabindex="0" aria-expanded="true" aria-controls="historyBody">
         <h2 class="history-title" data-i18n="history.title">📋 생성 기록</h2>
-        <span class="history-toggle-icon" id="historyToggleIcon">▼</span>
+        <span class="history-toggle-icon" id="historyToggleIcon" aria-hidden="true">▼</span>
       </div>
       <div class="history-body" id="historyBody">
         <div class="history-list" id="historyList">
@@ -724,9 +724,6 @@
         </button>
         <div class="support-qr" id="supportQr" style="display:none">
           <p class="support-qr-title" data-i18n="support.qr_title">카카오페이로 송금해주세요!</p>
-          <a href="https://qr.kakaopay.com/FM5t5VmBF" target="_blank" rel="noopener" class="support-qr-link">
-            <img src="카카오톡 송금링크.png" alt="카카오페이 송금 QR" class="support-qr-img">
-          </a>
           <p class="support-qr-name">관익</p>
           <a href="https://qr.kakaopay.com/FM5t5VmBF" target="_blank" rel="noopener" class="support-pay-btn">
             💳 카카오페이로 송금하기
@@ -743,7 +740,7 @@
   <!-- 출석 체크 모달 -->
   <div class="modal-overlay" id="checkinModal" style="display:none">
     <div class="modal-sheet">
-      <div class="modal-close" id="checkinClose">&times;</div>
+      <button type="button" class="modal-close" id="checkinClose" aria-label="닫기">&times;</button>
       <div class="checkin-character">🍀</div>
       <div class="checkin-title" id="checkinTitle">오늘도 왔네!</div>
       <div class="checkin-reward" id="checkinReward">🍀 +1 클로버</div>
@@ -758,7 +755,7 @@
   <!-- 프리미엄 게이트 모달 -->
   <div class="modal-overlay" id="premiumModal" style="display:none">
     <div class="modal-sheet">
-      <div class="modal-close" id="premiumClose">&times;</div>
+      <button type="button" class="modal-close" id="premiumClose" aria-label="닫기">&times;</button>
       <div class="premium-title" id="premiumTitle">이 기능을 열려면</div>
       <div class="premium-cost-display" id="premiumCostDisplay">🍀 3 클로버가 필요해요!</div>
       <div class="premium-balance" id="premiumBalance">현재 🍀 0 클로버</div>
@@ -774,22 +771,22 @@
   <!-- 클로버 충전소 모달 -->
   <div class="modal-overlay" id="cloverShopModal" style="display:none">
     <div class="modal-sheet">
-      <div class="modal-close" id="cloverShopClose">&times;</div>
+      <button type="button" class="modal-close" id="cloverShopClose" aria-label="닫기">&times;</button>
       <h2 class="modal-title" data-i18n="clover.shop_title">🍀 클로버 충전소</h2>
       <p class="clover-shop-desc" data-i18n="clover.shop_desc">클로버를 충전하면 프리미엄 기능을 마음껏 이용할 수 있어요!</p>
       <div class="clover-tiers">
-        <div class="clover-tier" data-tier="starter" data-amount="15">
+        <div class="clover-tier" data-tier="starter" role="button" tabindex="0" data-amount="15">
           <div class="tier-name" data-i18n="clover.tier_starter">🍀 스타터</div>
           <div class="tier-clovers">15🍀</div>
           <div class="tier-price" id="tierPriceStarter">777원</div>
         </div>
-        <div class="clover-tier popular" data-tier="popular" data-amount="50">
+        <div class="clover-tier popular" data-tier="popular" role="button" tabindex="0" data-amount="50">
           <div class="tier-badge" data-i18n="clover.tier_popular_badge">BEST</div>
           <div class="tier-name" data-i18n="clover.tier_popular">⭐ 인기</div>
           <div class="tier-clovers">50🍀</div>
           <div class="tier-price" id="tierPricePopular">2,000원</div>
         </div>
-        <div class="clover-tier" data-tier="vip" data-amount="200">
+        <div class="clover-tier" data-tier="vip" role="button" tabindex="0" data-amount="200">
           <div class="tier-name" data-i18n="clover.tier_vip">👑 VIP</div>
           <div class="tier-clovers">200🍀</div>
           <div class="tier-price" id="tierPriceVip">7,777원</div>
@@ -803,7 +800,7 @@
   <!-- 프리미엄 상세 해석 모달 -->
   <div class="modal-overlay" id="premiumDetailModal" style="display:none">
     <div class="modal-sheet modal-large premium-detail-sheet">
-      <div class="modal-close" id="premiumDetailClose">&times;</div>
+      <button type="button" class="modal-close" id="premiumDetailClose" aria-label="닫기">&times;</button>
       <div class="premium-detail-header">
         <div class="premium-badge">✨ PREMIUM</div>
         <h2 class="premium-detail-title" id="premiumDetailTitle">사주 상세 해석</h2>
@@ -816,7 +813,7 @@
   <!-- 업적 모달 -->
   <div class="modal-overlay" id="achievementModal" style="display:none">
     <div class="modal-sheet modal-large">
-      <div class="modal-close" id="achievementClose">&times;</div>
+      <button type="button" class="modal-close" id="achievementClose" aria-label="닫기">&times;</button>
       <h2 class="modal-title">🏆 업적</h2>
       <div class="achievement-stats" id="achievementStats"></div>
       <div class="achievement-list" id="achievementList"></div>
@@ -826,7 +823,7 @@
   <!-- 번호 필터 모달 -->
   <div class="modal-overlay" id="numberFilterModal" style="display:none">
     <div class="modal-sheet modal-large number-filter-sheet">
-      <div class="modal-close" id="numberFilterClose">&times;</div>
+      <button type="button" class="modal-close" id="numberFilterClose" aria-label="닫기">&times;</button>
       <div class="number-filter-header">
         <div class="premium-badge">🎯 FILTER</div>
         <h2 class="number-filter-title">번호 필터</h2>
@@ -857,7 +854,7 @@
   <!-- 로그인 모달 -->
   <div class="modal-overlay" id="loginModal" style="display:none">
     <div class="modal-sheet login-sheet">
-      <div class="modal-close" id="loginModalClose">&times;</div>
+      <button type="button" class="modal-close" id="loginModalClose" aria-label="닫기">&times;</button>
       <div class="login-header">
         <div class="login-icon">🔐</div>
         <h2 class="login-title">로그인</h2>
@@ -874,14 +871,14 @@
           Google로 로그인
         </button>
       </div>
-      <p class="login-skip" id="loginSkip">나중에 할게요</p>
+      <button type="button" class="login-skip" id="loginSkip">나중에 할게요</button>
     </div>
   </div>
 
   <!-- MBTI 랭킹 모달 -->
   <div class="modal-overlay" id="mbtiRankingModal" style="display:none">
     <div class="modal-sheet modal-large">
-      <div class="modal-close" id="mbtiRankingClose">&times;</div>
+      <button type="button" class="modal-close" id="mbtiRankingClose" aria-label="닫기">&times;</button>
       <h2 class="modal-title">오늘의 MBTI 행운 랭킹</h2>
       <div class="mbti-ranking-list" id="mbtiRankingList"></div>
     </div>
@@ -908,27 +905,28 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
 
   <!-- Firebase SDK (compat — 프로젝트 설정 후 활성화) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js" defer></script>
 
   <!-- i18n -->
-  <script src="js/i18n.js"></script>
+  <script src="js/kst.js" defer></script>
+  <script src="js/i18n.js" defer></script>
   <!-- 스크립트 -->
-  <script src="js/data.js"></script>
-  <script src="js/analysis.js"></script>
-  <script src="js/saju.js"></script>
-  <script src="js/name.js"></script>
-  <script src="js/chemistry.js"></script>
-  <script src="js/mbti.js"></script>
-  <script src="js/explain.js"></script>
-  <script src="js/lotto.js"></script>
-  <script src="js/gamification.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/data.js" defer></script>
+  <script src="js/analysis.js" defer></script>
+  <script src="js/saju.js" defer></script>
+  <script src="js/name.js" defer></script>
+  <script src="js/chemistry.js" defer></script>
+  <script src="js/mbti.js" defer></script>
+  <script src="js/explain.js" defer></script>
+  <script src="js/lotto.js" defer></script>
+  <script src="js/gamification.js" defer></script>
+  <script src="js/auth.js" defer></script>
+  <script src="js/app.js" defer></script>
 
   <!-- Kakao SDK -->
-  <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js"></script>
+  <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js" defer></script>
 
   <!-- Service Worker 등록 -->
   <script>

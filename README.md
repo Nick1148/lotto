@@ -35,6 +35,17 @@ http://localhost:8000
 
 ---
 
+## 검사 / 테스트
+
+빌드 단계는 없습니다 (정적 파일 그대로 배포). 의존성 설치도 필요 없습니다.
+
+```bash
+npm test          # JS 문법·JSON 검사 + 단위 테스트 (Node 18+)
+npm run test:e2e  # 390px 모바일 브라우저 스모크 테스트 (Playwright + Chromium 필요)
+```
+
+---
+
 ## 기능
 
 | 탭 | 방식 | 설명 |
@@ -79,6 +90,7 @@ http://localhost:8000
 │   ├── app.js              ← UI 이벤트, 애니메이션
 │   ├── lotto.js            ← 4종 번호 생성 알고리즘
 │   ├── saju.js             ← 60간지 사주 계산
+│   ├── kst.js              ← 한국 시간(KST) 날짜 유틸
 │   └── data.js             ← JSON 로드 + 빈도 분석
 ├── data/
 │   └── lotto_history.json  ← 수집된 당첨번호 (fetch_data.js 실행 후 채워짐)
